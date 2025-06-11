@@ -88,4 +88,29 @@ export class AdministradorControllers
       res.status(500).json({ error: "Hubo un error" });
     }
   };
+
+  static loginAdministrador = async (req: Request, res: Response) =>
+{
+  try
+  {
+    const { adminCorreoElectronico, adminContrasena } = req.body;
+
+    const administrador = await Administrador.findOne({
+      where: { adminCorreoElectronico, adminContrasena },
+    });
+
+    if (!administrador)
+    {
+      res.status(401).json({ error: "Credenciales inválidas" });
+      return;
+    }
+
+    res.status(200).json({ mensaje: "Login exitoso", administrador });
+  }
+  catch (error)
+  {
+    res.status(500).json({ error: "Hubo un error en el servidor" });
+  }
+};
+
 }

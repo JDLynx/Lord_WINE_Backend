@@ -1,6 +1,7 @@
 import express from 'express';
 import colors from 'colors'; // Para colorear los logs en consola
 import morgan from 'morgan'; // Middleware para logs HTTP
+import cors from 'cors';
 import { db } from './config/db'; // Instancia Sequelize configurada
 import administradorRouter from './routes/administradorRouter';
 
@@ -33,6 +34,7 @@ async function connectDB()
 connectDB();
 // Crear la instancia principal de Express
 const app = express();
+app.use(cors());
 // Middleware para registrar peticiones HTTP en consola (modo desarrollo)
 app.use(morgan('dev'));
 // Middleware para parsear JSON en los cuerpos de las solicitudes

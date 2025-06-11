@@ -70,4 +70,13 @@ router.delete(
   AdministradorControllers.eliminarAdministradorId
 );
 
+router.post(
+  "/login",
+  body("correo").notEmpty().withMessage("El correo es obligatorio").isEmail().withMessage("Correo inválido"),
+  body("contrasena").notEmpty().withMessage("La contraseña es obligatoria"),
+  handleInputErrors,
+  AdministradorControllers.loginAdministrador
+);
+
+
 export default router;
