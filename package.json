@@ -1,0 +1,39 @@
+{
+  "name": "lord_wine_backend_git",
+  "version": "1.0.0",
+  "description": "Backend proyecto formativo Lord WINE",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JDLynx/lord_wine_backend.git"
+  },
+  "author": "Juan David Molina Juspian",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JDLynx/lord_wine_backend/issues"
+  },
+  "homepage": "https://github.com/JDLynx/lord_wine_backend#readme",
+  "dependencies": {
+    "add": "^2.0.6",
+    "colors": "^1.4.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-validator": "^7.2.1",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.14.1",
+    "sequelize-typescript": "^2.1.6",
+    "yarn": "^1.22.22"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "@types/morgan": "^1.9.9",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

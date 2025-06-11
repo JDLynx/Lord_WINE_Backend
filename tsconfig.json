@@ -1,0 +1,31 @@
+{
+  "compilerOptions":
+  {
+    // Carpeta de salida para los archivos compilados (.js)
+    "outDir": "./dist",
+    // Carpeta raíz donde están tus archivos TypeScript fuente
+    "rootDir": "./src",
+    // Bibliotecas estándar de JavaScript que se incluyen (aquí ESNext para últimas funcionalidades)
+    "lib": ["ESNext"],
+    // Versión objetivo del código JavaScript que emitirá el compilador (ESNext = últimas características)
+    "target": "ESNext",
+    // Modo de resolución de módulos, aquí 'NodeNext' para usar la resolución de módulos moderna de Node.js (ESM)
+    "moduleResolution": "NodeNext",
+    // Tipo de módulos que generará el compilador, aquí usando módulos ES (import/export)
+    "module": "NodeNext",
+    // Activa todas las comprobaciones estrictas de tipos para mayor seguridad y calidad de código
+    "strict": true,
+    // Generar mapas de fuente para facilitar depuración del código TS en el navegador o Node
+    "sourceMap": true,
+    // Permite interoperabilidad con módulos CommonJS, importante para importar paquetes comunes de npm
+    "esModuleInterop": true,
+    // Generar archivos de declaración (.d.ts) para poder usar tu código como librería con tipado
+    "declaration": true,
+    // Habilita decoradores experimentales (muy usados en frameworks y ORMs como sequelize-typescript)
+    "experimentalDecorators": true,
+    // Genera metadatos para decoradores, necesario para que funcionen correctamente algunas librerías
+    "emitDecoratorMetadata": true
+  },
+  // Archivos que serán incluidos en la compilación (todos .ts dentro de src y subcarpetas)
+  "include": ["./src/**/*.ts"]
+}
