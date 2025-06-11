@@ -22,6 +22,9 @@ export class Administrador extends Model<Administrador>
   @Unique
   @Column({ type: DataType.STRING(50), allowNull: false })
   adminCorreoElectronico!: string;
+
+  @Column({ type: DataType.STRING(255), allowNull: false })
+  adminContrasena!: string;
 }
 
 export default Administrador;

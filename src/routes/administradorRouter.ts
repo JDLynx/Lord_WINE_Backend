@@ -43,6 +43,11 @@ router.post("/",
       }
       return true;
     }),
+    body("adminContrasena")
+    .notEmpty()
+    .withMessage("La contraseña es obligatoria")
+    .isLength({ min: 4 })
+    .withMessage("La contraseña debe tener al menos 4 caracteres"),
   handleInputErrors,
   AdministradorControllers.crearAdministrador
 );
@@ -53,6 +58,7 @@ router.put("/:id",
   body("adminDireccion").notEmpty().withMessage("La dirección es obligatoria").isLength({ max: 50 }),
   body("adminTelefono").notEmpty().withMessage("El teléfono es obligatorio").isLength({ max: 50 }),
   body("adminCorreoElectronico").notEmpty().withMessage("El correo electrónico es obligatorio").isEmail().withMessage("Formato de correo inválido"),
+  body("adminContrasena").optional().isLength({ min: 4 }).withMessage("La contraseña debe tener al menos 4 caracteres"),
   handleInputErrors,
   AdministradorControllers.actualizarAdministradorId
 );
