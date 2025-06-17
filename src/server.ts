@@ -16,7 +16,7 @@ async function connectDB()
         // Ejecutar una consulta SQL simple para verificar que funciona la conexión
         try
         {
-            const [results, metadata] = await db.query('SELECT * FROM Administrador LIMIT 10');
+            const [results, metadata] = await db.query('SELECT * FROM Administrador LIMIT 30');
             console.log('Datos de ejemplo:', results); // Mostrar resultados en consola
         }
         catch (error)
