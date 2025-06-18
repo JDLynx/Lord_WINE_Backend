@@ -1,60 +1,53 @@
-// administradorRouter.ts
-// Importa Router para definir rutas
 import { Router } from "express";
-// Controladores del Administrador
 import { AdministradorControllers } from "../controllers/AdministradorController";
-// Middleware para manejar errores de validación
 import { handleInputErrors } from "../middleware/validation";
-// Importa las validaciones desde el nuevo archivo de middleware
 import { getAdministradorByIdValidation, createAdministradorValidation, updateAdministradorValidation, deleteAdministradorValidation, loginAdministradorValidation } from "../middleware/administrador";
 
-// Instancia del enrutador
+// Crea una instancia del enrutador para agrupar las rutas relacionadas con administradores
 const router = Router();
 
-// ───────────────────────────────────────────────
-// Obtener todos los administradores
+// Ruta para obtener todos los administradores registrados
 router.get("/", AdministradorControllers.getAdministradorAll);
 
-// ───────────────────────────────────────────────
-// Obtener un administrador por su ID
-router.get("/:id",
-    getAdministradorByIdValidation, // Middleware de validación
-    handleInputErrors,
+// Ruta para obtener un administrador específico por su ID
+router.get(
+    "/:id",
+  getAdministradorByIdValidation, // Validación del parámetro ID
+  handleInputErrors,              // Manejo de errores de validación
     AdministradorControllers.getAdministradorById
 );
 
-// ───────────────────────────────────────────────
-// Crear un nuevo administrador
-router.post("/",
-    createAdministradorValidation, // Middleware de validación
+// Ruta para registrar un nuevo administrador en la base de datos
+router.post(
+    "/",
+  createAdministradorValidation,  // Validación de los datos del administrador
     handleInputErrors,
     AdministradorControllers.crearAdministrador
 );
 
-// ───────────────────────────────────────────────
-// Actualizar un administrador por ID
-router.put("/:id",
-    updateAdministradorValidation, // Middleware de validación
+// Ruta para actualizar los datos de un administrador existente
+router.put(
+    "/:id",
+  updateAdministradorValidation,  // Validación de los campos modificables
     handleInputErrors,
     AdministradorControllers.actualizarAdministradorId
 );
 
-// ───────────────────────────────────────────────
-// Eliminar un administrador por ID
-router.delete("/:id",
-    deleteAdministradorValidation, // Middleware de validación
+// Ruta para eliminar un administrador a partir de su ID
+router.delete(
+    "/:id",
+  deleteAdministradorValidation,  // Validación del parámetro ID
     handleInputErrors,
     AdministradorControllers.eliminarAdministradorId
 );
 
-// ───────────────────────────────────────────────
-// Login de administrador
-router.post("/login",
-    loginAdministradorValidation, // Middleware de validación
+// Ruta para autenticar a un administrador con su correo y contraseña
+router.post(
+    "/login",
+  loginAdministradorValidation,   // Validación de credenciales
     handleInputErrors,
     AdministradorControllers.loginAdministrador
 );
 
-// ───────────────────────────────────────────────
-// Exporta el enrutador
+// Exporta el enrutador para ser usado en el archivo principal de rutas
 export default router;

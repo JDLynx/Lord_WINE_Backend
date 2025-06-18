@@ -1,62 +1,111 @@
-// middleware/administrador.ts
 import { body, param } from "express-validator";
-import Administrador from "../models/administrador"; // Asegúrate de que esta ruta sea correcta para tu proyecto
+import Administrador from "../models/administrador";
 
-// --- Validaciones para obtener un administrador por su ID ---
-export const getAdministradorByIdValidation = [
-    param("id").isInt().withMessage("ID no válido") // Valida que el ID sea un entero
-        .custom((value) => value > 0).withMessage("ID no válido"), // Y mayor a cero
-];
+// Valida que el parámetro "id" en la URL sea un número entero positivo
+const idValidator = param("id")
+    .isInt({ min: 1 }).withMessage("El ID debe ser un número entero positivo");
 
-// --- Validaciones para crear un nuevo administrador ---
+// Exporta la validación para obtener administrador por ID (usada en rutas tipo GET /:id)
+export const getAdministradorByIdValidation = [idValidator];
+
+// Validaciones para crear un nuevo administrador
 export const createAdministradorValidation = [
-    // Valida que el ID del admin no esté vacío ni repetido
+  // Valida que el ID sea entero, positivo y único en la base de datos
     body("adminIdAdministrador")
-        .notEmpty().withMessage("El ID del administrador no puede estar vacío")
-        .custom(async (value) => {
-            const exists = await Administrador.findOne({ where: { adminIdAdministrador: value } });
-            if (exists) throw new Error("El ID del administrador ya está registrado");
-            return true;
-        }),
-    // Valida nombre, dirección, teléfono (no vacíos y máximo 50 caracteres)
-    body("adminNombre").notEmpty().withMessage("El nombre es obligatorio").isLength({ max: 50 }),
-    body("adminDireccion").notEmpty().withMessage("La dirección es obligatoria").isLength({ max: 50 }),
-    body("adminTelefono").notEmpty().withMessage("El teléfono es obligatorio").isLength({ max: 50 }),
-    // Valida correo electrónico (único y con formato)
+    .notEmpty().withMessage("El ID del administrador no puede estar vacío")
+    .isInt({ min: 1 }).withMessage("El ID debe ser un número entero positivo")
+    .custom(async (value: number) => {
+        const exists = await Administrador.findOne({ where: { adminIdAdministrador: value } });
+        if (exists) throw new Error("Este ID ya está registrado");
+        return true;
+    }),
+
+  // Valida el nombre: no vacío y máximo 50 caracteres
+    body("adminNombre")
+    .trim()
+    .notEmpty().withMessage("El nombre es obligatorio")
+    .isLength({ max: 50 }).withMessage("El nombre no puede superar los 50 caracteres"),
+
+  // Valida la dirección: no vacía y máximo 50 caracteres
+    body("adminDireccion")
+    .trim()
+    .notEmpty().withMessage("La dirección es obligatoria")
+    .isLength({ max: 50 }).withMessage("La dirección no puede superar los 50 caracteres"),
+
+  // Valida el teléfono: no vacío, máximo 50 caracteres, y formato numérico válido
+    body("adminTelefono")
+    .trim()
+    .notEmpty().withMessage("El teléfono es obligatorio")
+    .isLength({ max: 50 }).withMessage("El teléfono no puede superar los 50 caracteres")
+    .matches(/^\+?\d{7,15}$/).withMessage("El teléfono debe contener entre 7 y 15 dígitos"),
+
+  // Valida el correo electrónico: no vacío, formato correcto, y que no esté registrado
     body("adminCorreoElectronico")
-        .notEmpty().withMessage("El correo electrónico es obligatorio")
-        .isEmail().withMessage("Formato de correo inválido")
-        .custom(async (value) => {
-            const exists = await Administrador.findOne({ where: { adminCorreoElectronico: value } });
-            if (exists) throw new Error("El correo electrónico ya está registrado");
-            return true;
-        }),
-    // Valida que la contraseña tenga mínimo 4 caracteres
+    .trim()
+    .notEmpty().withMessage("El correo electrónico es obligatorio")
+    .isEmail().withMessage("Formato de correo inválido")
+    .custom(async (value: string) => {
+        const exists = await Administrador.findOne({ where: { adminCorreoElectronico: value } });
+        if (exists) throw new Error("Este correo ya está registrado");
+        return true;
+    }),
+
+  // Valida la contraseña: no vacía y mínimo 6 caracteres
     body("adminContrasena")
-        .notEmpty().withMessage("La contraseña es obligatoria")
-        .isLength({ min: 4 }).withMessage("La contraseña debe tener al menos 4 caracteres"),
+    .notEmpty().withMessage("La contraseña es obligatoria")
+    .isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres")
 ];
 
-// --- Validaciones para actualizar un administrador por ID ---
+// Validaciones para actualizar un administrador existente
 export const updateAdministradorValidation = [
-    body("adminIdAdministrador").notEmpty().withMessage("El ID del administrador es obligatorio"),
-    body("adminNombre").notEmpty().withMessage("El nombre es obligatorio").isLength({ max: 50 }),
-    body("adminDireccion").notEmpty().withMessage("La dirección es obligatoria").isLength({ max: 50 }),
-    body("adminTelefono").notEmpty().withMessage("El teléfono es obligatorio").isLength({ max: 50 }),
+  // El ID debe seguir siendo entero y positivo
+    body("adminIdAdministrador")
+    .notEmpty().withMessage("El ID del administrador es obligatorio")
+    .isInt({ min: 1 }).withMessage("El ID debe ser un número entero positivo"),
+
+  // Validación del nombre como en creación
+    body("adminNombre")
+    .trim()
+    .notEmpty().withMessage("El nombre es obligatorio")
+    .isLength({ max: 50 }),
+
+  // Validación de la dirección como en creación
+    body("adminDireccion")
+    .trim()
+    .notEmpty().withMessage("La dirección es obligatoria")
+    .isLength({ max: 50 }),
+
+  // Validación del teléfono como en creación
+    body("adminTelefono")
+    .trim()
+    .notEmpty().withMessage("El teléfono es obligatorio")
+    .isLength({ max: 50 })
+    .matches(/^\+?\d{7,15}$/).withMessage("El teléfono debe contener entre 7 y 15 dígitos"),
+
+  // Validación del correo como en creación (sin verificación de existencia)
     body("adminCorreoElectronico")
-        .notEmpty().withMessage("El correo electrónico es obligatorio")
-        .isEmail().withMessage("Formato de correo inválido"),
-    // La contraseña puede ser opcional pero debe cumplir mínimo si se envía
-    body("adminContrasena").optional().isLength({ min: 4 }).withMessage("La contraseña debe tener al menos 4 caracteres"),
+    .trim()
+    .notEmpty().withMessage("El correo electrónico es obligatorio")
+    .isEmail().withMessage("Formato de correo inválido"),
+
+  // La contraseña es opcional, pero si se envía debe tener al menos 6 caracteres
+    body("adminContrasena")
+    .optional()
+    .isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
 ];
 
-// --- Validaciones para eliminar un administrador por ID ---
-export const deleteAdministradorValidation = [
-    param("id").isInt().withMessage("ID no válido").custom((value) => value > 0).withMessage("ID no válido"),
-];
+// Validación para eliminar un administrador (requiere solo el ID por URL)
+export const deleteAdministradorValidation = [idValidator];
 
-// --- Validaciones para el login de administrador ---
+// Validaciones para iniciar sesión de administrador
 export const loginAdministradorValidation = [
-    body("correo").notEmpty().withMessage("El correo es obligatorio").isEmail().withMessage("Correo inválido"),
-    body("contrasena").notEmpty().withMessage("La contraseña es obligatoria"),
+  // Valida el campo del correo: no vacío y con formato válido
+    body("adminCorreoElectronico")
+    .trim()
+    .notEmpty().withMessage("El correo electrónico es obligatorio")
+    .isEmail().withMessage("Correo inválido"),
+
+  // Valida la contraseña: no vacía
+    body("adminContrasena")
+    .notEmpty().withMessage("La contraseña es obligatoria")
 ];
