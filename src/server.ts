@@ -24,6 +24,8 @@ import gestionaEmpleadoInventarioTiendaRouter from './routes/gestionaEmpleadoInv
 import gestionaAdministradorInventarioGeneralRouter from './routes/gestionaAdministradorInventarioGeneralRouter';
 import tieneClienteCarritoDeComprasRouter from './routes/tieneClienteCarritoDeComprasRouter';
 import detalleCarritoRouter from './routes/detalleCarritoRouter';
+import authRouter from './routes/authRouter';
+
 
 // Función para conectar a la base de datos y probar con una consulta simple
 async function connectDB()
@@ -81,5 +83,6 @@ app.use('/api/gestiona-empleado-inventario-tienda', gestionaEmpleadoInventarioTi
 app.use('/api/gestiona-administrador-inventario-general', gestionaAdministradorInventarioGeneralRouter);
 app.use('/api/tiene-cliente-carrito', tieneClienteCarritoDeComprasRouter);
 app.use('/api/detalles-carrito', detalleCarritoRouter);
+app.use('/api/auth', authRouter);
 // Exportar la instancia de app para que pueda ser utilizada en otros archivos (p.ej. para iniciar el servidor)
 export default app;
