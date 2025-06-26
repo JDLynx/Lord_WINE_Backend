@@ -7,14 +7,13 @@ import Cliente from '../src/models/cliente';
 async function hashPasswords()
 {
   try {
-    // Conectamos a la base de datos
+
     await db.authenticate();
     console.log('✅ Conectado a la base de datos.');
 
-    // 1️⃣ ADMINISTRADORES
     const admins = await Administrador.findAll();
     for (const admin of admins) {
-      // Si la contraseña NO parece hash (no empieza con $2b$), la encriptamos
+
       if (!admin.adminContrasena.startsWith('$2b$')) {
         const hashed = await bcrypt.hash(admin.adminContrasena, 10);
         admin.adminContrasena = hashed;
@@ -23,7 +22,6 @@ async function hashPasswords()
       }
     }
 
-    // 2️⃣ EMPLEADOS
     const empleados = await Empleado.findAll();
     for (const empleado of empleados) {
       if (!empleado.emplContrasena.startsWith('$2b$')) {
@@ -34,7 +32,6 @@ async function hashPasswords()
       }
     }
 
-    // 3️⃣ CLIENTES
     const clientes = await Cliente.findAll();
     for (const cliente of clientes) {
       if (!cliente.clContrasena.startsWith('$2b$')) {
@@ -53,5 +50,4 @@ async function hashPasswords()
   }
 }
 
-// Ejecutamos la función
 hashPasswords();
