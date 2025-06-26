@@ -1,9 +1,8 @@
 import express from 'express';
-import { login } from '../controllers/LoginController';
+import { AuthController } from '../controllers/AuthController';
 
 const authRouter = express.Router();
 
-// Ruta para autenticar al usuario
-authRouter.post('/login', login);
+authRouter.post('/login', AuthController.login);
 
 export default authRouter;
