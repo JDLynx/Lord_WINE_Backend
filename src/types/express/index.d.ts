@@ -1,4 +1,4 @@
-import { JwtPayload as DefaultJwtPayload } from "jsonwebtoken";
+import { JwtPayload as DefaultJwtPayload } from "jsonwebtoken"; //Import
 
 declare global {
     namespace Express {
