@@ -16,13 +16,16 @@ export class TieneInventarioTiendaProductoController {
                     },
                     {
                         model: InventarioTienda,
-                        attributes: ['invTienCantidadDisponible'],
+                        attributes: ['invTienIdInventarioTienda'],
                         include: [
                             {
                                 model: TiendaFisica,
-                                attributes: ['tiendNombre', 'tiendDireccion']
+                                as: 'tiendasFisicas',
+                                attributes: ['tiendNombre', 'tiendDireccion'],
+                                required: false
                             }
-                        ]
+                        ],
+                        required: false
                     }
                 ]
             });
@@ -30,18 +33,30 @@ export class TieneInventarioTiendaProductoController {
             const relacionesTransformadas = relaciones.map(relacion => {
                 const plainRelacion: any = relacion.get({ plain: true });
 
-                if (plainRelacion.inventarioTienda && plainRelacion.inventarioTienda.tiendasFisicas && plainRelacion.inventarioTienda.tiendasFisicas.length > 0) {
+                if (plainRelacion.inventarioTienda) {
 
-                    const tiendaAsociada = plainRelacion.inventarioTienda.tiendasFisicas[0];
-                    
+                    if (plainRelacion.inventarioTienda.tiendasFisicas && plainRelacion.inventarioTienda.tiendasFisicas.length > 0) {
+                        const tiendaAsociada = plainRelacion.inventarioTienda.tiendasFisicas[0];
+                        plainRelacion.inventarioTienda = {
+                            ...plainRelacion.inventarioTienda,
+                            tiendNombre: tiendaAsociada.tiendNombre,
+                            tiendDireccion: tiendaAsociada.tiendDireccion
+                        };
+                        delete plainRelacion.inventarioTienda.tiendasFisicas;
+                    } else {
+
+                        plainRelacion.inventarioTienda.tiendNombre = 'Tienda Desconocida';
+                        plainRelacion.inventarioTienda.tiendDireccion = 'Dirección Desconocida';
+                    }
+                } else {
+
                     plainRelacion.inventarioTienda = {
-                        ...plainRelacion.inventarioTienda,
-                        tiendNombre: tiendaAsociada.tiendNombre,
-                        tiendDireccion: tiendaAsociada.tiendDireccion
-                    };
 
-                    delete plainRelacion.inventarioTienda.tiendasFisicas;
+                        tiendNombre: 'Tienda Desconocida',
+                        tiendDireccion: 'Dirección Desconocida'
+                    };
                 }
+
                 return plainRelacion;
             });
 
@@ -64,13 +79,16 @@ export class TieneInventarioTiendaProductoController {
                     },
                     {
                         model: InventarioTienda,
-                        attributes: ['invTienCantidadDisponible'],
+                        attributes: ['invTienIdInventarioTienda'],
                         include: [
                             {
                                 model: TiendaFisica,
-                                attributes: ['tiendNombre', 'tiendDireccion']
+                                as: 'tiendasFisicas',
+                                attributes: ['tiendNombre', 'tiendDireccion'],
+                                required: false
                             }
-                        ]
+                        ],
+                        required: false
                     }
                 ]
             });
@@ -80,14 +98,29 @@ export class TieneInventarioTiendaProductoController {
             }
 
             const plainRelacion: any = relacion.get({ plain: true });
-            if (plainRelacion.inventarioTienda && plainRelacion.inventarioTienda.tiendasFisicas && plainRelacion.inventarioTienda.tiendasFisicas.length > 0) {
-                const tiendaAsociada = plainRelacion.inventarioTienda.tiendasFisicas[0];
+
+            if (plainRelacion.inventarioTienda) {
+
+                if (plainRelacion.inventarioTienda.tiendasFisicas && plainRelacion.inventarioTienda.tiendasFisicas.length > 0) {
+                    const tiendaAsociada = plainRelacion.inventarioTienda.tiendasFisicas[0];
+                    plainRelacion.inventarioTienda = {
+                        ...plainRelacion.inventarioTienda,
+                        tiendNombre: tiendaAsociada.tiendNombre,
+                        tiendDireccion: tiendaAsociada.tiendDireccion
+                    };
+                    delete plainRelacion.inventarioTienda.tiendasFisicas;
+                } else {
+
+                    plainRelacion.inventarioTienda.tiendNombre = 'Tienda Desconocida';
+                    plainRelacion.inventarioTienda.tiendDireccion = 'Dirección Desconocida';
+                }
+            } else {
+
                 plainRelacion.inventarioTienda = {
-                    ...plainRelacion.inventarioTienda,
-                    tiendNombre: tiendaAsociada.tiendNombre,
-                    tiendDireccion: tiendaAsociada.tiendDireccion
+
+                    tiendNombre: 'Tienda Desconocida',
+                    tiendDireccion: 'Dirección Desconocida'
                 };
-                delete plainRelacion.inventarioTienda.tiendasFisicas;
             }
 
             res.json(plainRelacion);
