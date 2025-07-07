@@ -1,58 +1,151 @@
 import { Request, Response } from "express";
 import TieneInventarioTiendaProducto from "../models/tiene_inventario_tienda_producto";
+import { Producto } from '../models/producto';
+import { InventarioTienda } from '../models/inventario_tienda';
+import { TiendaFisica } from '../models/tienda_fisica';
 
-export class TieneInventarioTiendaProductoController
-{
+export class TieneInventarioTiendaProductoController {
     static getAll = async (req: Request, res: Response) => {
         try {
-        const relaciones = await TieneInventarioTiendaProducto.findAll({
-            order: [["invTienIdInventarioTienda", "ASC"]]
-        });
-        res.json(relaciones);
-        } catch {
-        res.status(500).json({ error: "Error al obtener las relaciones" });
+            const relaciones = await TieneInventarioTiendaProducto.findAll({
+                order: [["invTienIdInventarioTienda", "ASC"]],
+                include: [
+                    {
+                        model: Producto,
+                        attributes: ['prodNombre', 'prodDescripcion', 'prodPrecio']
+                    },
+                    {
+                        model: InventarioTienda,
+                        attributes: ['invTienCantidadDisponible'],
+                        include: [
+                            {
+                                model: TiendaFisica,
+                                attributes: ['tiendNombre', 'tiendDireccion']
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            const relacionesTransformadas = relaciones.map(relacion => {
+                const plainRelacion: any = relacion.get({ plain: true });
+
+                if (plainRelacion.inventarioTienda && plainRelacion.inventarioTienda.tiendasFisicas && plainRelacion.inventarioTienda.tiendasFisicas.length > 0) {
+
+                    const tiendaAsociada = plainRelacion.inventarioTienda.tiendasFisicas[0];
+                    
+                    plainRelacion.inventarioTienda = {
+                        ...plainRelacion.inventarioTienda,
+                        tiendNombre: tiendaAsociada.tiendNombre,
+                        tiendDireccion: tiendaAsociada.tiendDireccion
+                    };
+
+                    delete plainRelacion.inventarioTienda.tiendasFisicas;
+                }
+                return plainRelacion;
+            });
+
+            res.json(relacionesTransformadas);
+        } catch (error) {
+            console.error("Error al obtener las relaciones de inventario:", error);
+            res.status(500).json({ error: "Error al obtener las relaciones de inventario" });
         }
     };
-    
+
     static getByIds = async (req: Request, res: Response) => {
         try {
-        const { invTienIdInventarioTienda, prodIdProducto } = req.params;
-        const relacion = await TieneInventarioTiendaProducto.findOne({
-            where: { invTienIdInventarioTienda, prodIdProducto }
-        });
-        if (!relacion) {
-            res.status(404).json({ error: "Relación no encontrada" });
-            return;
-        }
-        res.json(relacion);
-        } catch {
-        res.status(500).json({ error: "Error al obtener la relación" });
+            const { invTienIdInventarioTienda, prodIdProducto } = req.params;
+            const relacion = await TieneInventarioTiendaProducto.findOne({
+                where: { invTienIdInventarioTienda, prodIdProducto },
+                include: [
+                    {
+                        model: Producto,
+                        attributes: ['prodNombre', 'prodDescripcion', 'prodPrecio']
+                    },
+                    {
+                        model: InventarioTienda,
+                        attributes: ['invTienCantidadDisponible'],
+                        include: [
+                            {
+                                model: TiendaFisica,
+                                attributes: ['tiendNombre', 'tiendDireccion']
+                            }
+                        ]
+                    }
+                ]
+            });
+            if (!relacion) {
+                res.status(404).json({ error: "Relación de inventario no encontrada" });
+                return;
+            }
+
+            const plainRelacion: any = relacion.get({ plain: true });
+            if (plainRelacion.inventarioTienda && plainRelacion.inventarioTienda.tiendasFisicas && plainRelacion.inventarioTienda.tiendasFisicas.length > 0) {
+                const tiendaAsociada = plainRelacion.inventarioTienda.tiendasFisicas[0];
+                plainRelacion.inventarioTienda = {
+                    ...plainRelacion.inventarioTienda,
+                    tiendNombre: tiendaAsociada.tiendNombre,
+                    tiendDireccion: tiendaAsociada.tiendDireccion
+                };
+                delete plainRelacion.inventarioTienda.tiendasFisicas;
+            }
+
+            res.json(plainRelacion);
+        } catch (error) {
+            console.error("Error al obtener la relación de inventario:", error);
+            res.status(500).json({ error: "Error al obtener la relación de inventario" });
         }
     };
-    
+
     static create = async (req: Request, res: Response) => {
         try {
-        const relacion = await TieneInventarioTiendaProducto.create(req.body);
-        res.status(201).json({ mensaje: "Relación creada correctamente", relacion });
-        } catch {
-        res.status(500).json({ error: "Error al crear la relación" });
+            const relacion = await TieneInventarioTiendaProducto.create(req.body);
+            res.status(201).json({ mensaje: "Relación de inventario creada correctamente", relacion });
+        } catch (error) {
+            console.error("Error al crear la relación de inventario:", error);
+            res.status(500).json({ error: "Error al crear la relación de inventario" });
         }
     };
-    
+
+    static update = async (req: Request, res: Response) => {
+        try {
+            const { invTienIdInventarioTienda, prodIdProducto } = req.params;
+            const { invTienProdCantidad } = req.body;
+
+            const relacion = await TieneInventarioTiendaProducto.findOne({
+                where: { invTienIdInventarioTienda, prodIdProducto }
+            });
+
+            if (!relacion) {
+                res.status(404).json({ error: "Relación de inventario no encontrada" });
+                return;
+            }
+
+            relacion.invTienProdCantidad = invTienProdCantidad;
+            await relacion.save();
+
+            res.json({ mensaje: "Cantidad de producto en inventario actualizada correctamente", relacion });
+        } catch (error) {
+            console.error("Error al actualizar la cantidad del producto en inventario:", error);
+            res.status(500).json({ error: "Error al actualizar la cantidad del producto en inventario" });
+        }
+    };
+
     static deleteByIds = async (req: Request, res: Response) => {
         try {
-        const { invTienIdInventarioTienda, prodIdProducto } = req.params;
-        const relacion = await TieneInventarioTiendaProducto.findOne({
-            where: { invTienIdInventarioTienda, prodIdProducto }
-        });
-        if (!relacion) {
-            res.status(404).json({ error: "Relación no encontrada" });
-            return;
-        }
-        await relacion.destroy();
-        res.json({ mensaje: "Relación eliminada correctamente" });
-        } catch {
-        res.status(500).json({ error: "Error al eliminar la relación" });
+            const { invTienIdInventarioTienda, prodIdProducto } = req.params;
+            const relacion = await TieneInventarioTiendaProducto.findOne({
+                where: { invTienIdInventarioTienda, prodIdProducto }
+            });
+            if (!relacion) {
+                res.status(404).json({ error: "Relación de inventario no encontrada" });
+                return;
+            }
+            await relacion.destroy();
+            res.json({ mensaje: "Relación de inventario eliminada correctamente" });
+        } catch (error) {
+            console.error("Error al eliminar la relación de inventario:", error);
+            res.status(500).json({ error: "Error al eliminar la relación de inventario" });
         }
     };
 }
