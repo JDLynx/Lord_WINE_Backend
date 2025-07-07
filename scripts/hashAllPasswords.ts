@@ -51,3 +51,5 @@ async function hashPasswords()
 }
 
 hashPasswords();
+
+//npx ts-node scripts/hashAllPasswords.ts

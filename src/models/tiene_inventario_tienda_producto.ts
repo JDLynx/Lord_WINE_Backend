@@ -15,6 +15,9 @@ export class TieneInventarioTiendaProducto extends Model<TieneInventarioTiendaPr
   @Column({ type: DataType.INTEGER })
   declare prodIdProducto: number;
 
+  @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
+  declare invTienProdCantidad: number;
+
   @BelongsTo(() => InventarioTienda)
   declare inventarioTienda: InventarioTienda;
 
