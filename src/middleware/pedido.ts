@@ -37,5 +37,18 @@ export const createPedidoValidation = [
 
 export const updatePedidoValidation = [
     idParamValidator,
-    ...createPedidoValidation
+    body("pedEstado")
+        .optional()
+        .trim()
+        .notEmpty().withMessage("El estado no puede estar vacío si se proporciona")
+        .isLength({ max: 50 }).withMessage("El estado no puede superar los 50 caracteres"),
+    body("emplCodEmpleado")
+        .optional()
+        .isInt({ gt: 0 }).withMessage("El código del empleado debe ser un número entero positivo si se proporciona")
+        .custom((value, { req }) => {
+            if (value === '') {
+                return true;
+            }
+            return true;
+        })
 ];

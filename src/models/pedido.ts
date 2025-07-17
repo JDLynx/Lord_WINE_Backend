@@ -1,32 +1,26 @@
-// Importa decoradores y tipos desde sequelize-typescript
-import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, CreatedAt, UpdatedAt } from 'sequelize-typescript';
-// Importaciones
+import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, HasMany, CreatedAt, UpdatedAt } from 'sequelize-typescript';
 import Cliente from './cliente';
 import Empleado from './empleado';
 import ServicioEmpresarial from './servicio_empresarial';
+import DetallePedido from './detalle_pedido';
 
 @Table({ tableName: 'Pedido' })
 export class Pedido extends Model<Pedido>
 {
-  // Clave primaria autoincremental
   @PrimaryKey
   @AutoIncrement
   @Column
   declare pedIdPedido: number;
 
-  // Fecha del pedido
   @Column({ type: DataType.DATEONLY, allowNull: false })
   declare pedFecha: string;
 
-  // Total del pedido
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare pedTotal: number;
 
-  // Estado del pedido (ej. pendiente, enviado, etc.)
   @Column({ type: DataType.STRING(50), allowNull: false })
   declare pedEstado: string;
 
-  // Clave foránea hacia Cliente
   @ForeignKey(() => Cliente)
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare clCodCliente: number;
@@ -34,15 +28,13 @@ export class Pedido extends Model<Pedido>
   @BelongsTo(() => Cliente)
   declare cliente: Cliente;
 
-  // Clave foránea hacia Empleado
   @ForeignKey(() => Empleado)
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare emplCodEmpleado: number;
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare emplCodEmpleado: number | null;
 
   @BelongsTo(() => Empleado)
   declare empleado: Empleado;
 
-  // Clave foránea hacia ServicioEmpresarial
   @ForeignKey(() => ServicioEmpresarial)
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare serIdServicioEmpresarial: number;
@@ -50,7 +42,9 @@ export class Pedido extends Model<Pedido>
   @BelongsTo(() => ServicioEmpresarial)
   declare servicioEmpresarial: ServicioEmpresarial;
 
-  // Timestamps automáticos
+  @HasMany(() => DetallePedido)
+  declare detallesPedido: DetallePedido[];
+
   @CreatedAt
   @Column({ field: 'createdAt' })
   declare createdAt: Date;
