@@ -1,8 +1,12 @@
+// src/server.ts
 import express from 'express';
 import colors from 'colors'; // Para colorear los logs en consola
 import morgan from 'morgan'; // Middleware para logs HTTP
 import cors from 'cors';
+import dotenv from 'dotenv'; // Importar dotenv para cargar variables de entorno
 import { db } from './config/db'; // Instancia Sequelize configurada
+
+// Importar todos tus routers existentes
 import administradorRouter from './routes/administradorRouter';
 import servicioEmpresarialRouter from './routes/servicioEmpresarialRouter';
 import clienteRouter from './routes/clienteRouter';
@@ -26,42 +30,31 @@ import tieneClienteCarritoDeComprasRouter from './routes/tieneClienteCarritoDeCo
 import detalleCarritoRouter from './routes/detalleCarritoRouter';
 import authRouter from './routes/authRouter';
 
+// Importar las rutas de Dialogflow API
+import dialogflowApiRouter from './routes/dialogflow'; // Asegúrate de que este archivo se llame 'dialogflow.ts'
 
-// Función para conectar a la base de datos y probar con una consulta simple
-async function connectDB()
-{
-    try
-    {
-        // Intentar autenticar la conexión a la base de datos
-        await db.authenticate();
-        console.log(colors.blue.bold('Conexión exitosa a la BD'));
-        // Ejecutar una consulta SQL simple para verificar que funciona la conexión
-        try
-        {
-            const [results, metadata] = await db.query('SELECT * FROM Administrador LIMIT 5');
-            console.log('Datos de ejemplo:', results); // Mostrar resultados en consola
-        }
-        catch (error)
-        {
-            console.error('Error al ejecutar la consulta:', error);
-        }
-    }
-    catch (error)
-    {
-        console.error('Error al conectar a la BD:', error);
-        console.log(colors.red.bold('Falló la conexión a la BD'));
-    }
-}
-// Ejecutar la conexión a la base de datos al iniciar la aplicación
-connectDB();
+
+// Cargar las variables de entorno desde .env al inicio de la aplicación
+// Aunque index.ts también lo llama, es buena práctica tenerlo aquí si este módulo se importa de forma aislada
+dotenv.config();
+
 // Crear la instancia principal de Express
 const app = express();
-app.use(cors());
+
+// Middleware para configurar CORS
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 // Middleware para registrar peticiones HTTP en consola (modo desarrollo)
 app.use(morgan('dev'));
+
 // Middleware para parsear JSON en los cuerpos de las solicitudes
 app.use(express.json());
-// Registrar las rutas
+
+// Registrar las rutas de tu API
 app.use('/api/administradores', administradorRouter);
 app.use('/api/servicios-empresariales', servicioEmpresarialRouter);
 app.use('/api/pedidos', pedidoRouter);
@@ -84,5 +77,10 @@ app.use('/api/gestiona-administrador-inventario-general', gestionaAdministradorI
 app.use('/api/tiene-cliente-carrito', tieneClienteCarritoDeComprasRouter);
 app.use('/api/detalles-carrito', detalleCarritoRouter);
 app.use('/api/auth', authRouter);
-// Exportar la instancia de app para que pueda ser utilizada en otros archivos (p.ej. para iniciar el servidor)
+
+// NUEVO: Ruta para las interacciones con la API de Dialogflow
+// El frontend enviará solicitudes POST a http://localhost:3000/api/dialogflow-query
+app.use('/api', dialogflowApiRouter);
+
+// Exportar la instancia de app para que pueda ser utilizada por index.ts
 export default app;
