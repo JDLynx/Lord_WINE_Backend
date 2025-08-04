@@ -78,8 +78,7 @@ app.use('/api/tiene-cliente-carrito', tieneClienteCarritoDeComprasRouter);
 app.use('/api/detalles-carrito', detalleCarritoRouter);
 app.use('/api/auth', authRouter);
 
-// NUEVO: Ruta para las interacciones con la API de Dialogflow
-// El frontend enviará solicitudes POST a http://localhost:3000/api/dialogflow-query
+
 app.use('/api', dialogflowApiRouter);
 
 // Exportar la instancia de app para que pueda ser utilizada por index.ts
