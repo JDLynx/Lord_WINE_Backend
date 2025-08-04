@@ -53,7 +53,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Registrar las rutas de tu API
-=======
+
 async function connectDB() {
     try {
         await db.authenticate();
@@ -70,7 +70,6 @@ async function connectDB() {
     }
 }
 connectDB();
-const app = express();
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
