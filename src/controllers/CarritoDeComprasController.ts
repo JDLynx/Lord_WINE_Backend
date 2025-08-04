@@ -1,18 +1,15 @@
-// src/controllers/CarritoDeComprasController.ts
 import { Request, Response, NextFunction } from "express";
-import { Op } from "sequelize"; // Importar Op para operaciones de Sequelize
+import { Op } from "sequelize";
 import CarritoDeCompras from "../models/carrito_de_compras";
 import DetalleCarrito from "../models/detalle_carrito";
 import Producto from "../models/producto";
 import TieneClienteCarritoDeCompras from "../models/tiene_cliente_carrito_de_compras";
 import TieneDetalleProducto from "../models/tiene_detalle_producto";
 import TieneInventarioTiendaProducto from "../models/tiene_inventario_tienda_producto";
-import { db } from "../config/db"; // Asegúrate de importar tu instancia de Sequelize
+import { db } from "../config/db";
 
 export class CarritoDeComprasController {
 
-    // Método para obtener el carrito de compras del cliente autenticado
-    // GET /api/cart
     static getCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const clCodCliente = req.clientCod;
 
@@ -26,16 +23,16 @@ export class CarritoDeComprasController {
                 where: { clCodCliente },
                 include: [{
                     model: CarritoDeCompras,
-                    as: 'carritoDeCompras', // Alias en TieneClienteCarritoDeCompras
+                    as: 'carritoDeCompras',
                     include: [{
                         model: DetalleCarrito,
-                        as: 'detallesCarrito', // Alias en CarritoDeCompras
+                        as: 'detallesCarrito',
                         include: [{
                             model: TieneDetalleProducto,
-                            as: 'productosDetalle', // Alias en DetalleCarrito
+                            as: 'productosDetalle',
                             include: [{
                                 model: Producto,
-                                as: 'producto' // Alias en TieneDetalleProducto
+                                as: 'producto'
                             }]
                         }]
                     }]
@@ -85,8 +82,6 @@ export class CarritoDeComprasController {
         }
     };
 
-    // Método para agregar un producto al carrito o incrementar su cantidad
-    // POST /api/cart/add
     static addToCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const clCodCliente = req.clientCod;
         const { productId, quantity } = req.body;
@@ -129,9 +124,7 @@ export class CarritoDeComprasController {
             }
 
             if (!carrito) {
-                // AÑADIDO 'as any'
                 carrito = await CarritoDeCompras.create({ carEstado: "activo" } as any, { transaction });
-                // AÑADIDO 'as any'
                 await TieneClienteCarritoDeCompras.create({
                     clCodCliente,
                     carIdCarritoDeCompras: carrito.carIdCarritoDeCompras
@@ -142,7 +135,7 @@ export class CarritoDeComprasController {
                 where: { prodIdProducto: productId },
                 include: [{
                     model: DetalleCarrito,
-                    as: 'detalleCarrito', // Alias en TieneDetalleProducto
+                    as: 'detalleCarrito',
                     where: { carIdCarritoDeCompras: carrito.carIdCarritoDeCompras },
                     required: true
                 }],
@@ -166,14 +159,12 @@ export class CarritoDeComprasController {
                     detSubtotal: nuevaCantidad * parseFloat(producto.prodPrecio.toString())
                 }, { transaction });
             } else {
-                // AÑADIDO 'as any'
                 detalleCarrito = await DetalleCarrito.create({
                     carIdCarritoDeCompras: carrito.carIdCarritoDeCompras,
                     detCantidad: quantity,
                     detSubtotal: quantity * parseFloat(producto.prodPrecio.toString())
                 } as any, { transaction });
 
-                // AÑADIDO 'as any'
                 await TieneDetalleProducto.create({
                     detIdDetalleCarrito: detalleCarrito.detIdDetalleCarrito,
                     prodIdProducto: productId
@@ -190,8 +181,6 @@ export class CarritoDeComprasController {
         }
     };
 
-    // Método para actualizar la cantidad de un producto específico en el carrito
-    // PUT /api/cart/update/:productId
     static updateCartItem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const clCodCliente = req.clientCod;
         const { productId } = req.params;
@@ -221,7 +210,7 @@ export class CarritoDeComprasController {
                 where: { prodIdProducto: parseInt(productId) },
                 include: [{
                     model: DetalleCarrito,
-                    as: 'detalleCarrito', // Alias en TieneDetalleProducto
+                    as: 'detalleCarrito',
                     where: { carIdCarritoDeCompras: carId },
                     required: true
                 }],
@@ -275,8 +264,6 @@ export class CarritoDeComprasController {
         }
     };
 
-    // Método para eliminar un producto del carrito
-    // DELETE /api/cart/remove/:productId
     static removeCartItem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const clCodCliente = req.clientCod;
         const { productId } = req.params;
@@ -305,7 +292,7 @@ export class CarritoDeComprasController {
                 where: { prodIdProducto: parseInt(productId) },
                 include: [{
                     model: DetalleCarrito,
-                    as: 'detalleCarrito', // Alias en TieneDetalleProducto
+                    as: 'detalleCarrito',
                     where: { carIdCarritoDeCompras: carId },
                     required: true
                 }],
@@ -333,8 +320,6 @@ export class CarritoDeComprasController {
         }
     };
 
-    // Método para vaciar completamente el carrito del cliente
-    // DELETE /api/cart/clear
     static clearCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const clCodCliente = req.clientCod;
 
@@ -381,7 +366,6 @@ export class CarritoDeComprasController {
         }
     };
 
-    // --- Métodos de CRUD genéricos (puedes eliminarlos si solo usas los de cliente) ---
     static getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const carritos = await CarritoDeCompras.findAll({ order: [['carIdCarritoDeCompras', 'ASC']] });
@@ -407,7 +391,7 @@ export class CarritoDeComprasController {
 
     static create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const carrito = await CarritoDeCompras.create(req.body); // No se necesita 'as any' aquí si req.body ya tiene el tipo correcto
+            const carrito = await CarritoDeCompras.create(req.body);
             res.status(201).json({ mensaje: "Carrito creado correctamente", carrito });
         } catch (error) {
             next(error);

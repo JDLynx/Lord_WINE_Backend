@@ -1,8 +1,6 @@
-// middlewares/validarJWT.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-// Interfaz para agregar "user" al objeto Request
 interface JwtPayload {
     id: number;
     rol: string;
@@ -18,8 +16,8 @@ export const validarJWT = (req: Request, res: Response, next: NextFunction): voi
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-        req.user = decoded; // Agregamos el usuario decodificado a la request
-        next(); // Continua hacia el controlador
+        req.user = decoded;
+        next();
     } catch (error) {
         res.status(401).json({ error: "Token inválido o expirado" });
     }
