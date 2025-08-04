@@ -1,109 +1,123 @@
 import { Request, Response } from "express";
-import { ValidationError, UniqueConstraintError } from "sequelize";
 import Empleado from "../models/empleado";
+import Administrador from "../models/administrador";
+import bcrypt from "bcrypt";
 
-export const EmpleadoControllers =
-{
-    getEmpleados: async (_req: Request, res: Response): Promise<void> => {
+export const EmpleadoController = {
+    getAll: async (req: Request, res: Response): Promise<void> => {
         try {
-        const empleados = await Empleado.findAll();
-        res.status(200).json(empleados);
+            const empleados = await Empleado.findAll({
+                include: [{ model: Administrador }]
+            });
+            res.status(200).json(empleados);
         } catch (error) {
-        console.error("Error al obtener empleados:", error);
-        res.status(500).json({ message: "Error del servidor al obtener los empleados" });
+            console.error("Error al obtener empleados:", error);
+            res.status(500).json({ message: "Error al obtener empleados" });
         }
     },
 
-    getEmpleadoById: async (req: Request, res: Response): Promise<void> => {
+    getById: async (req: Request, res: Response): Promise<void> => {
         try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
-            return;
-        }
+            const id = parseInt(req.params.id);
+            const empleado = await Empleado.findByPk(id, {
+                include: [{ model: Administrador }]
+            });
 
-        const empleado = await Empleado.findByPk(id);
-        if (!empleado) {
-            res.status(404).json({ message: "Empleado no encontrado" });
-            return;
-        }
+            if (!empleado) {
+                res.status(404).json({ message: "Empleado no encontrado" });
+                return;
+            }
 
-        res.status(200).json(empleado);
+            res.status(200).json(empleado);
         } catch (error) {
-        console.error("Error al obtener empleado:", error);
-        res.status(500).json({ message: "Error del servidor al obtener el empleado" });
+            console.error("Error al obtener empleado:", error);
+            res.status(500).json({ message: "Error al obtener empleado" });
         }
     },
 
-    crearEmpleado: async (req: Request, res: Response): Promise<void> => {
+    create: async (req: Request, res: Response): Promise<void> => {
         try {
-        const nuevoEmpleado = await Empleado.create(req.body);
-        res.status(201).json({ message: "Empleado creado correctamente", empleado: nuevoEmpleado });
-        } catch (error: any) {
-        if (error instanceof UniqueConstraintError || error instanceof ValidationError) {
-            const errores = error.errors.map((e) => ({
-            campo: e.path,
-            mensaje: e.message
-            }));
-            const tipo = error instanceof UniqueConstraintError ? "Error de campos únicos duplicados" : "Error de validación";
-            res.status(400).json({ message: tipo, errores });
-        } else {
+            const { emplContrasena, ...restoDatos } = req.body;
+            const hash = await bcrypt.hash(emplContrasena, 10);
+            const nuevoEmpleado = await Empleado.create({
+                ...restoDatos,
+                emplContrasena: hash
+            });
+            res.status(201).json(nuevoEmpleado);
+        } catch (error) {
             console.error("Error al crear empleado:", error);
-            res.status(500).json({ message: "Error del servidor al crear el empleado" });
-        }
+            res.status(500).json({ message: "Error al crear empleado" });
         }
     },
 
-    actualizarEmpleado: async (req: Request, res: Response): Promise<void> => {
+    update: async (req: Request, res: Response): Promise<void> => {
         try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
-            return;
-        }
+            const id = parseInt(req.params.id);
+            const empleado = await Empleado.findByPk(id);
 
-        const empleado = await Empleado.findByPk(id);
-        if (!empleado) {
-            res.status(404).json({ message: "Empleado no encontrado" });
-            return;
-        }
+            if (!empleado) {
+                res.status(404).json({ message: "Empleado no encontrado" });
+                return;
+            }
 
-        await empleado.update(req.body);
-        res.status(200).json({ message: "Empleado actualizado correctamente", empleado });
-        } catch (error: any) {
-        if (error instanceof UniqueConstraintError || error instanceof ValidationError) {
-            const errores = error.errors.map((e) => ({
-            campo: e.path,
-            mensaje: e.message
-            }));
-            const tipo = error instanceof UniqueConstraintError ? "Error de campos únicos duplicados" : "Error de validación";
-            res.status(400).json({ message: tipo, errores });
-        } else {
+            await empleado.update(req.body);
+            res.status(200).json(empleado);
+        } catch (error) {
             console.error("Error al actualizar empleado:", error);
-            res.status(500).json({ message: "Error del servidor al actualizar el empleado" });
-        }
+            res.status(500).json({ message: "Error al actualizar empleado" });
         }
     },
 
-    eliminarEmpleado: async (req: Request, res: Response): Promise<void> => {
+    delete: async (req: Request, res: Response): Promise<void> => {
         try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
-            return;
-        }
+            const id = parseInt(req.params.id);
+            const empleado = await Empleado.findByPk(id);
 
-        const empleado = await Empleado.findByPk(id);
-        if (!empleado) {
-            res.status(404).json({ message: "Empleado no encontrado" });
-            return;
-        }
+            if (!empleado) {
+                res.status(404).json({ message: "Empleado no encontrado" });
+                return;
+            }
 
-        await empleado.destroy();
-        res.status(200).json({ message: "Empleado eliminado correctamente" });
-        } catch (error: any) {
-        console.error("Error al eliminar empleado:", error);
-        res.status(500).json({ message: "Error del servidor al eliminar el empleado" });
+            await empleado.destroy();
+            res.status(204).send();
+        } catch (error) {
+            console.error("Error al eliminar empleado:", error);
+            res.status(500).json({ message: "Error al eliminar empleado" });
+        }
+    },
+
+    cambiarContrasena: async (req: Request, res: Response): Promise<void> => {
+        try {
+            const id = parseInt(req.params.id);
+            const { currentPassword, newPassword } = req.body;
+
+            if (isNaN(id)) {
+                res.status(400).json({ message: "ID inválido" });
+                return;
+            }
+
+            const empleado = await Empleado.findByPk(id);
+            if (!empleado) {
+                res.status(404).json({ message: "Empleado no encontrado" });
+                return;
+            }
+
+            const contrasenaValida = await bcrypt.compare(currentPassword, empleado.emplContrasena);
+            if (!contrasenaValida) {
+                res.status(401).json({ message: "La contraseña actual es incorrecta" });
+                return;
+            }
+
+            const nuevaContrasenaEncriptada = await bcrypt.hash(newPassword, 10);
+            empleado.emplContrasena = nuevaContrasenaEncriptada;
+            await empleado.save();
+
+            res.status(200).json({ message: "Contraseña actualizada correctamente" });
+        } catch (error) {
+            console.error("Error al cambiar la contraseña:", error);
+            res.status(500).json({ message: "Error del servidor al cambiar la contraseña" });
         }
     }
 };
+
+export default EmpleadoController;

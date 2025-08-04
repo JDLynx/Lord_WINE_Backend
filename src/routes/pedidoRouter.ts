@@ -5,31 +5,26 @@ import { getPedidoByIdValidation, createPedidoValidation, updatePedidoValidation
 
 const router = Router();
 
-// Obtener todos
 router.get("/", PedidoControllers.getPedidosAll);
 
-// Obtener por ID
 router.get("/:id",
     getPedidoByIdValidation,
     handleInputErrors,
     PedidoControllers.getPedidoById
 );
 
-// Crear
 router.post("/",
     createPedidoValidation,
     handleInputErrors,
     PedidoControllers.crearPedido
 );
 
-// Actualizar
 router.put("/:id",
     updatePedidoValidation,
     handleInputErrors,
     PedidoControllers.actualizarPedidoId
 );
 
-// Eliminar
 router.delete("/:id",
     deletePedidoValidation,
     handleInputErrors,

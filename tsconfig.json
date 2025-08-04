@@ -1,35 +1,21 @@
 {
   "compilerOptions": {
-    // Carpeta de salida para los archivos compilados (.js)
     "outDir": "./dist",
-    // Carpeta raíz donde están tus archivos TypeScript fuente
     "rootDir": "./src",
-    // Bibliotecas estándar de JavaScript que se incluyen (aquí ESNext para últimas funcionalidades)
     "lib": ["ESNext"],
-    // Versión objetivo del código JavaScript que emitirá el compilador (ESNext = últimas características)
     "target": "ESNext",
-    // Tipo de módulos que generará el compilador, aquí usando módulos ES (import/export)
     "module": "NodeNext",
-    // Modo de resolución de módulos
     "moduleResolution": "NodeNext",
-    // Activa todas las comprobaciones estrictas de tipos para mayor seguridad y calidad de código
     "strict": true,
-    // Generar mapas de fuente para facilitar depuración del código TS en el navegador o Node
     "sourceMap": true,
-    // Permite interoperabilidad con módulos CommonJS
     "esModuleInterop": true,
-    // Generar archivos de declaración (.d.ts)
     "declaration": true,
-    // Habilita decoradores experimentales (muy usados en frameworks y ORMs como sequelize-typescript)
     "experimentalDecorators": true,
-    // Genera metadatos para decoradores
     "emitDecoratorMetadata": true,
-    // Incluye tus tipos personalizados como express/index.d.ts
     "typeRoots": ["./node_modules/@types", "./src/types"],
-    "skipLibCheck": true, // AÑADIDO: Para ignorar errores de tipado en librerías de terceros
-    "allowSyntheticDefaultImports": true // AÑADIDO: Para importaciones más flexibles
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true
   },
-  // Archivos a incluir en la compilación
   "include": ["./src/**/*.ts"],
-  "exclude": ["node_modules", "dist"] // ASEGÚRATE de que estas líneas estén para excluir carpetas
+  "exclude": ["node_modules", "dist"]
 }

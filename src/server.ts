@@ -1,12 +1,10 @@
 // src/server.ts
 import express from 'express';
-import colors from 'colors'; // Para colorear los logs en consola
-import morgan from 'morgan'; // Middleware para logs HTTP
+import colors from 'colors';
+import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv'; // Importar dotenv para cargar variables de entorno
-import { db } from './config/db'; // Instancia Sequelize configurada
-
-// Importar todos tus routers existentes
+import { db } from './config/db';
 import administradorRouter from './routes/administradorRouter';
 import servicioEmpresarialRouter from './routes/servicioEmpresarialRouter';
 import clienteRouter from './routes/clienteRouter';
@@ -55,6 +53,27 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Registrar las rutas de tu API
+=======
+async function connectDB() {
+    try {
+        await db.authenticate();
+        console.log(colors.blue.bold('Conexión exitosa a la BD'));
+        try {
+        const [results, metadata] = await db.query('SELECT * FROM Administrador LIMIT 5');
+        console.log('Datos de ejemplo:', results);
+        } catch (error) {
+        console.error('Error al ejecutar la consulta:', error);
+        }
+    } catch (error) {
+        console.error('Error al conectar a la BD:', error);
+        console.log(colors.red.bold('Falló la conexión a la BD'));
+    }
+}
+connectDB();
+const app = express();
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
 app.use('/api/administradores', administradorRouter);
 app.use('/api/servicios-empresariales', servicioEmpresarialRouter);
 app.use('/api/pedidos', pedidoRouter);
@@ -77,9 +96,6 @@ app.use('/api/gestiona-administrador-inventario-general', gestionaAdministradorI
 app.use('/api/tiene-cliente-carrito', tieneClienteCarritoDeComprasRouter);
 app.use('/api/detalles-carrito', detalleCarritoRouter);
 app.use('/api/auth', authRouter);
-
-
 app.use('/api', dialogflowApiRouter);
 
-// Exportar la instancia de app para que pueda ser utilizada por index.ts
 export default app;
