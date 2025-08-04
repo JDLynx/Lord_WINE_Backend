@@ -2,8 +2,15 @@ import { Table, Column, Model, DataType, ForeignKey, BelongsTo, CreatedAt, Updat
 import { TiendaFisica } from './tienda_fisica';
 import { InventarioTienda } from './inventario_tienda';
 
+interface TieneTiendaFisicaInventarioTiendaCreationAttributes {
+  tiendIdTiendaFisica: number;
+  invTienIdInventarioTienda: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 @Table({ tableName: 'TieneTiendaFisicaInventarioTienda' })
-export class TieneTiendaFisicaInventarioTienda extends Model<TieneTiendaFisicaInventarioTienda>
+export class TieneTiendaFisicaInventarioTienda extends Model<TieneTiendaFisicaInventarioTienda, TieneTiendaFisicaInventarioTiendaCreationAttributes>
 {
   @PrimaryKey
   @ForeignKey(() => TiendaFisica)

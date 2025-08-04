@@ -3,12 +3,21 @@ import Administrador from './administrador';
 import { InventarioTienda } from './inventario_tienda';
 import { TieneTiendaFisicaInventarioTienda } from './tiene_tienda_fisica_inventario_tienda';
 
+interface TiendaFisicaCreationAttributes {
+  tiendNombre: string;
+  tiendDireccion: string;
+  tiendTelefono: string;
+  adminCodAdministrador: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 @Table({ tableName: 'TiendaFisica' })
-export class TiendaFisica extends Model<TiendaFisica>
+export class TiendaFisica extends Model<TiendaFisica, TiendaFisicaCreationAttributes>
 {
   @PrimaryKey
   @AutoIncrement
-  @Column
+  @Column({ type: DataType.INTEGER })
   declare tiendIdTiendaFisica: number;
 
   @Column({ type: DataType.STRING(50), allowNull: false })

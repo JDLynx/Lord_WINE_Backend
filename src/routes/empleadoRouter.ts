@@ -1,39 +1,40 @@
 import { Router } from 'express';
-import { EmpleadoControllers } from '../controllers/EmpleadoController';
+import { EmpleadoController } from '../controllers/EmpleadoController';
 import { handleInputErrors } from '../middleware/validation';
 import { createEmpleadoValidation, updateEmpleadoValidation, deleteEmpleadoValidation, getEmpleadoByIdValidation } from '../middleware/empleado';
 
 const router = Router();
 
-// Listar todos los empleados
-router.get('/', EmpleadoControllers.getEmpleados);
+router.get('/',
+    EmpleadoController.getAll
+);
 
-// Obtener un empleado por ID
 router.get('/:id',
     getEmpleadoByIdValidation,
     handleInputErrors,
-    EmpleadoControllers.getEmpleadoById
+    EmpleadoController.getById
 );
 
-// Crear un empleado
 router.post('/',
     createEmpleadoValidation,
     handleInputErrors,
-    EmpleadoControllers.crearEmpleado
+    EmpleadoController.create
 );
 
-// Actualizar un empleado
 router.put('/:id',
     updateEmpleadoValidation,
     handleInputErrors,
-    EmpleadoControllers.actualizarEmpleado
+    EmpleadoController.update
 );
 
-// Eliminar un empleado
 router.delete('/:id',
     deleteEmpleadoValidation,
     handleInputErrors,
-    EmpleadoControllers.eliminarEmpleado
+    EmpleadoController.delete
+);
+
+router.put('/:id/cambiar-contrasena',
+    EmpleadoController.cambiarContrasena
 );
 
 export default router;
