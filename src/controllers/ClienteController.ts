@@ -2,8 +2,7 @@ import type { Request, Response } from "express";
 import Cliente from "../models/cliente";
 import bcrypt from "bcrypt";
 
-export class ClienteControllers
-{
+export class ClienteControllers {
     static getClienteAll = async (req: Request, res: Response): Promise<void> => {
         try {
             const clientes = await Cliente.findAll({ order: [["clCodCliente", "ASC"]] });
@@ -147,6 +146,41 @@ export class ClienteControllers
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: "Error del servidor al iniciar sesión", detalles: (error as any).message });
+        }
+    };
+
+    static changePassword = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { id } = req.params;
+            const { currentPassword, newPassword } = req.body;
+
+            if (!currentPassword || !newPassword) {
+                res.status(400).json({ message: "La contraseña actual y la nueva contraseña son obligatorias." });
+                return;
+            }
+
+            const cliente = await Cliente.findByPk(parseInt(id));
+            if (!cliente) {
+                res.status(404).json({ message: "Cliente no encontrado." });
+                return;
+            }
+
+            const isMatch = await bcrypt.compare(currentPassword, cliente.clContrasena);
+            if (!isMatch) {
+                res.status(401).json({ message: "Contraseña actual incorrecta." });
+                return;
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            cliente.clContrasena = hashedPassword;
+            await cliente.save();
+
+            res.status(200).json({ message: "Contraseña cambiada exitosamente." });
+
+        } catch (error) {
+            console.error("Error al cambiar la contraseña del cliente:", error);
+            res.status(500).json({ message: "Error interno del servidor al cambiar la contraseña.", detalles: (error as any).message });
         }
     };
 }
