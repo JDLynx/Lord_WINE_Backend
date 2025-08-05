@@ -1,7 +1,13 @@
 import { Router } from "express";
 import { ClienteControllers } from "../controllers/ClienteController";
 import { handleInputErrors } from "../middleware/validation";
-import { getClienteByIdValidation, createClienteValidation, updateClienteValidation, deleteClienteValidation, loginClienteValidation } from "../middleware/cliente";
+import {
+    getClienteByIdValidation,
+    createClienteValidation,
+    updateClienteValidation,
+    deleteClienteValidation,
+    loginClienteValidation
+} from "../middleware/cliente";
 
 const router = Router();
 
@@ -35,6 +41,11 @@ router.post("/login",
     loginClienteValidation,
     handleInputErrors,
     ClienteControllers.loginCliente
+);
+
+router.put("/:id/cambiar-contrasena",
+    handleInputErrors,
+    ClienteControllers.changePassword
 );
 
 export default router;
