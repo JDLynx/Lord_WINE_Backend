@@ -95,6 +95,6 @@ app.use('/api/gestiona-administrador-inventario-general', gestionaAdministradorI
 app.use('/api/tiene-cliente-carrito', tieneClienteCarritoDeComprasRouter);
 app.use('/api/detalles-carrito', detalleCarritoRouter);
 app.use('/api/auth', authRouter);
-app.use('/api', dialogflowApiRouter);
+app.use('/api/dialogflow', dialogflowApiRouter);
 
 export default app;
