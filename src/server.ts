@@ -1,9 +1,8 @@
-// src/server.ts
 import express from 'express';
 import colors from 'colors';
 import morgan from 'morgan';
 import cors from 'cors';
-import dotenv from 'dotenv'; // Importar dotenv para cargar variables de entorno
+import dotenv from 'dotenv';
 import { db } from './config/db';
 import administradorRouter from './routes/administradorRouter';
 import servicioEmpresarialRouter from './routes/servicioEmpresarialRouter';
@@ -27,32 +26,20 @@ import gestionaAdministradorInventarioGeneralRouter from './routes/gestionaAdmin
 import tieneClienteCarritoDeComprasRouter from './routes/tieneClienteCarritoDeComprasRouter';
 import detalleCarritoRouter from './routes/detalleCarritoRouter';
 import authRouter from './routes/authRouter';
+import dialogflowApiRouter from './routes/dialogflow';
 
-// Importar las rutas de Dialogflow API
-import dialogflowApiRouter from './routes/dialogflow'; // Asegúrate de que este archivo se llame 'dialogflow.ts'
-
-
-// Cargar las variables de entorno desde .env al inicio de la aplicación
-// Aunque index.ts también lo llama, es buena práctica tenerlo aquí si este módulo se importa de forma aislada
 dotenv.config();
 
-// Crear la instancia principal de Express
 const app = express();
 
-// --- CAMBIO AQUÍ: CONFIGURACIÓN DE CORS CORREGIDA ---
-// Middleware para configurar CORS
-// Se permite el acceso desde cualquier origen para que funcione con tu frontend desplegado en Render.
-// Nota: Para mayor seguridad en producción, puedes reemplazar '*' con el dominio de tu frontend.
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Middleware para registrar peticiones HTTP en consola (modo desarrollo)
 app.use(morgan('dev'));
 
-// Middleware para parsear JSON en los cuerpos de las solicitudes
 app.use(express.json());
 
 // Registrar las rutas de tu API
@@ -73,11 +60,6 @@ async function connectDB() {
     }
 }
 connectDB();
-
-// --- CAMBIO AQUÍ: SE ELIMINARON LAS LÍNEAS DUPLICADAS Y CONFLICTIVAS DE CORS Y MIDDLEWARE ---
-// app.use(cors()); // Esta línea se eliminó
-// app.use(morgan('dev')); // Esta línea se eliminó (ya está arriba)
-// app.use(express.json()); // Esta línea se eliminó (ya está arriba)
 
 app.use('/api/administradores', administradorRouter);
 app.use('/api/servicios-empresariales', servicioEmpresarialRouter);
