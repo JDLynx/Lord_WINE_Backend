@@ -39,11 +39,14 @@ dotenv.config();
 // Crear la instancia principal de Express
 const app = express();
 
+// --- CAMBIO AQUÍ: CONFIGURACIÓN DE CORS CORREGIDA ---
 // Middleware para configurar CORS
+// Se permite el acceso desde cualquier origen para que funcione con tu frontend desplegado en Render.
+// Nota: Para mayor seguridad en producción, puedes reemplazar '*' con el dominio de tu frontend.
 app.use(cors({
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Middleware para registrar peticiones HTTP en consola (modo desarrollo)
@@ -55,24 +58,27 @@ app.use(express.json());
 // Registrar las rutas de tu API
 
 async function connectDB() {
-    try {
-        await db.authenticate();
-        console.log(colors.blue.bold('Conexión exitosa a la BD'));
-        try {
-        const [results, metadata] = await db.query('SELECT * FROM Administrador LIMIT 5');
-        console.log('Datos de ejemplo:', results);
-        } catch (error) {
-        console.error('Error al ejecutar la consulta:', error);
-        }
-    } catch (error) {
-        console.error('Error al conectar a la BD:', error);
-        console.log(colors.red.bold('Falló la conexión a la BD'));
-    }
+    try {
+        await db.authenticate();
+        console.log(colors.blue.bold('Conexión exitosa a la BD'));
+        try {
+        const [results, metadata] = await db.query('SELECT * FROM Administrador LIMIT 5');
+        console.log('Datos de ejemplo:', results);
+        } catch (error) {
+        console.error('Error al ejecutar la consulta:', error);
+        }
+    } catch (error) {
+        console.error('Error al conectar a la BD:', error);
+        console.log(colors.red.bold('Falló la conexión a la BD'));
+    }
 }
 connectDB();
-app.use(cors());
-app.use(morgan('dev'));
-app.use(express.json());
+
+// --- CAMBIO AQUÍ: SE ELIMINARON LAS LÍNEAS DUPLICADAS Y CONFLICTIVAS DE CORS Y MIDDLEWARE ---
+// app.use(cors()); // Esta línea se eliminó
+// app.use(morgan('dev')); // Esta línea se eliminó (ya está arriba)
+// app.use(express.json()); // Esta línea se eliminó (ya está arriba)
+
 app.use('/api/administradores', administradorRouter);
 app.use('/api/servicios-empresariales', servicioEmpresarialRouter);
 app.use('/api/pedidos', pedidoRouter);
