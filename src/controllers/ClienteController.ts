@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
 import Cliente from "../models/cliente";
 import bcrypt from "bcrypt";
+import { transporter, mailOptions } from "../config/mailer";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export class ClienteControllers {
     static getClienteAll = async (req: Request, res: Response): Promise<void> => {
@@ -48,6 +52,31 @@ export class ClienteControllers {
                 ...req.body,
                 clContrasena: hashedPassword,
             });
+
+            try {
+                const htmlContent = `
+                    <h2>Bienvenido a Lord Wine 🍷</h2>
+                    <p>Gracias por registrarte. Estos son tus datos:</p>
+                    <ul>
+                        ${Object.entries(req.body)
+                            .map(([key, value]) => `<li><b>${key}:</b> ${value}</li>`)
+                            .join("")}
+                    </ul>
+                    <p>Fecha de registro: ${new Date().toLocaleString()}</p>
+                `;
+
+                await transporter.sendMail(
+                    mailOptions(
+                        clCorreoElectronico,
+                        "Bienvenido a Lord Wine 🍷",
+                        htmlContent
+                    )
+                );
+                console.log(`📩 Correo de bienvenida enviado a ${clCorreoElectronico}`);
+            } catch (emailError) {
+                console.error("❌ Error al enviar correo de bienvenida:", emailError);
+            }
+
             res.status(201).json({ mensaje: "Cliente creado correctamente", cliente: nuevoCliente });
         } catch (error: any) {
             console.error(error);
