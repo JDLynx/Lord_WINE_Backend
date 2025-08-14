@@ -40,7 +40,7 @@ export class ClienteControllers {
 
     static crearCliente = async (req: Request, res: Response): Promise<void> => {
         try {
-            const { clCorreoElectronico, clContrasena } = req.body;
+            const { clCorreoElectronico, clContrasena, clNombre } = req.body; // Se agrega 'clNombre' para el correo.
 
             if (!clCorreoElectronico || !clContrasena) {
                 res.status(400).json({ error: "Correo electrónico y contraseña son obligatorios" });
@@ -55,20 +55,36 @@ export class ClienteControllers {
 
             try {
                 const htmlContent = `
-                    <h2>Bienvenido a Lord Wine 🍷</h2>
-                    <p>Gracias por registrarte. Estos son tus datos:</p>
-                    <ul>
-                        ${Object.entries(req.body)
-                            .map(([key, value]) => `<li><b>${key}:</b> ${value}</li>`)
-                            .join("")}
-                    </ul>
-                    <p>Fecha de registro: ${new Date().toLocaleString()}</p>
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <div style="background-color: #921913; color: white; padding: 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">¡Bienvenido/a a Lord Wine! 🍷</h1>
+                        </div>
+                        <div style="padding: 20px; color: #333;">
+                            <p style="font-size: 16px;">Hola, ${clNombre || 'estimado cliente'},</p>
+                            <p style="font-size: 16px;">¡Gracias por unirte a nuestra comunidad de amantes del vino! Estamos encantados de tenerte con nosotros.</p>
+                            <p style="font-size: 16px;">Ya puedes explorar nuestra selecta colección de vinos, licores y más. Con tu cuenta, podrás disfrutar de una experiencia de compra única, recibir ofertas exclusivas y seguir el estado de tus pedidos.</p>
+                            <p style="font-size: 16px;">Para empezar, te invitamos a visitar nuestra tienda:</p>
+                            <div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+                                <a href="https://tudominio.com" style="background-color: #921913; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                                    Explora nuestra tienda
+                                </a>
+                            </div>
+                            <p style="font-size: 14px; color: #666; text-align: center;">
+                                Si tienes alguna pregunta, no dudes en contactarnos.
+                                <br>
+                                ¡Salud! 🥂
+                            </p>
+                        </div>
+                        <div style="background-color: #f4f4f4; padding: 10px; text-align: center; font-size: 12px; color: #888;">
+                            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+                        </div>
+                    </div>
                 `;
 
                 await transporter.sendMail(
                     mailOptions(
                         clCorreoElectronico,
-                        "Bienvenido a Lord Wine 🍷",
+                        "¡Bienvenido a Lord Wine!",
                         htmlContent
                     )
                 );
