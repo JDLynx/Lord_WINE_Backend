@@ -1,143 +1,139 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
+import bcrypt from "bcrypt";
+
 import Empleado from "../models/empleado";
 import Administrador from "../models/administrador";
-import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
 
-export const EmpleadoController = {
-    getAll: async (req: Request, res: Response): Promise<void> => {
+export class EmpleadoController {
+    static getAll = async (req: Request, res: Response): Promise<void> => {
         try {
-            const empleados = await Empleado.findAll({
-                include: [{ model: Administrador }]
-            });
-            res.status(200).json(empleados);
+        const empleados = await Empleado.findAll({
+            include: [{ model: Administrador, as: 'administrador' }]
+        });
+        res.status(200).json(empleados);
         } catch (error) {
-            res.status(500).json({ message: "Error al obtener empleados" });
+        console.error("Error al obtener empleados:", error);
+        res.status(500).json({ message: "Error del servidor al obtener empleados", detalles: (error as any).message });
         }
-    },
+    };
 
-    getById: async (req: Request, res: Response): Promise<void> => {
+    static getById = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
-            const empleado = await Empleado.findByPk(id, {
-                include: [{ model: Administrador }]
-            });
-
-            if (!empleado) {
-                res.status(404).json({ message: "Empleado no encontrado" });
-                return;
-            }
-
-            res.status(200).json(empleado);
-        } catch (error) {
-            res.status(500).json({ message: "Error al obtener empleado" });
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            res.status(400).json({ message: "ID inválido" });
+            return;
         }
-    },
+        const empleado = await Empleado.findByPk(id, {
+            include: [{ model: Administrador, as: 'administrador' }]
+        });
 
-    create: async (req: Request, res: Response): Promise<void> => {
+        if (!empleado) {
+            res.status(404).json({ message: "Empleado no encontrado" });
+            return;
+        }
+        res.status(200).json(empleado);
+        } catch (error) {
+        console.error("Error al obtener empleado:", error);
+        res.status(500).json({ message: "Error del servidor al obtener empleado", detalles: (error as any).message });
+        }
+    };
+
+    static create = async (req: Request, res: Response): Promise<void> => {
         try {
-            const { emplContrasena, emplCorreo, emplNombre, ...restoDatos } = req.body;
-            const hash = await bcrypt.hash(emplContrasena, 10);
-            const nuevoEmpleado = await Empleado.create({
-                ...restoDatos,
-                emplNombre,
-                emplCorreo,
-                emplContrasena: hash
-            });
-
-            const transporter = nodemailer.createTransport({
-                service: "gmail",
-                auth: {
-                    user: "tucorreo@gmail.com",
-                    pass: "tu_contraseña_o_app_password"
-                }
-            });
-
-            const mailOptions = {
-                from: "tucorreo@gmail.com",
-                to: emplCorreo,
-                subject: "Registro de Empleado",
-                html: `
-                    <h1>Bienvenido ${emplNombre}</h1>
-                    <p>Te has registrado como empleado correctamente.</p>
-                    <p><b>Correo:</b> ${emplCorreo}</p>
-                    <p><b>Contraseña:</b> ${emplContrasena}</p>
-                `
-            };
-
-            await transporter.sendMail(mailOptions);
-
-            res.status(201).json(nuevoEmpleado);
-        } catch (error) {
-            res.status(500).json({ message: "Error al crear empleado" });
+        const { emplContrasena, ...restoDatos } = req.body;
+        const hash = await bcrypt.hash(emplContrasena, 10);
+        const nuevoEmpleado = await Empleado.create({
+            ...restoDatos,
+            emplContrasena: hash
+        });
+        res.status(201).json(nuevoEmpleado);
+        } catch (error: any) {
+        console.error("Error al crear empleado:", error);
+        if (error.name === "SequelizeValidationError") {
+            const mensajes = error.errors.map((err: any) => `${err.path}: ${err.message}`);
+            res.status(400).json({ message: mensajes.join(", ") });
+        } else if (error.name === "SequelizeUniqueConstraintError") {
+            const mensajes = error.errors.map((err: any) => `${err.path} ya registrado`);
+            res.status(400).json({ message: mensajes.join(", ") });
+        } else {
+            res.status(500).json({ message: "Error del servidor al crear empleado", detalles: error.message || error });
         }
-    },
+        }
+    };
 
-    update: async (req: Request, res: Response): Promise<void> => {
+    static update = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
-            const empleado = await Empleado.findByPk(id);
-
-            if (!empleado) {
-                res.status(404).json({ message: "Empleado no encontrado" });
-                return;
-            }
-
-            await empleado.update(req.body);
-            res.status(200).json(empleado);
-        } catch (error) {
-            res.status(500).json({ message: "Error al actualizar empleado" });
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            res.status(400).json({ message: "ID inválido" });
+            return;
         }
-    },
+        const empleado = await Empleado.findByPk(id);
 
-    delete: async (req: Request, res: Response): Promise<void> => {
+        if (!empleado) {
+            res.status(404).json({ message: "Empleado no encontrado" });
+            return;
+        }
+        await empleado.update(req.body);
+        res.status(200).json(empleado);
+        } catch (error: any) {
+        console.error("Error al actualizar empleado:", error);
+        if (error.name === "SequelizeValidationError") {
+            const mensajes = error.errors.map((err: any) => `${err.path}: ${err.message}`);
+            res.status(400).json({ message: mensajes.join(", ") });
+        } else {
+            res.status(500).json({ message: "Error del servidor al actualizar empleado", detalles: error.message || error });
+        }
+        }
+    };
+
+    static delete = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
-            const empleado = await Empleado.findByPk(id);
-
-            if (!empleado) {
-                res.status(404).json({ message: "Empleado no encontrado" });
-                return;
-            }
-
-            await empleado.destroy();
-            res.status(204).send();
-        } catch (error) {
-            res.status(500).json({ message: "Error al eliminar empleado" });
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            res.status(400).json({ message: "ID inválido" });
+            return;
         }
-    },
+        const empleado = await Empleado.findByPk(id);
 
-    cambiarContrasena: async (req: Request, res: Response): Promise<void> => {
+        if (!empleado) {
+            res.status(404).json({ message: "Empleado no encontrado" });
+            return;
+        }
+        await empleado.destroy();
+        res.status(204).send();
+        } catch (error) {
+        console.error("Error al eliminar empleado:", error);
+        res.status(500).json({ message: "Error del servidor al eliminar empleado", detalles: (error as any).message });
+        }
+    };
+
+    static cambiarContrasena = async (req: Request, res: Response): Promise<void> => {
         try {
-            const id = parseInt(req.params.id);
-            const { currentPassword, newPassword } = req.body;
-
-            if (isNaN(id)) {
-                res.status(400).json({ message: "ID inválido" });
-                return;
-            }
-
-            const empleado = await Empleado.findByPk(id);
-            if (!empleado) {
-                res.status(404).json({ message: "Empleado no encontrado" });
-                return;
-            }
-
-            const contrasenaValida = await bcrypt.compare(currentPassword, empleado.emplContrasena);
-            if (!contrasenaValida) {
-                res.status(401).json({ message: "La contraseña actual es incorrecta" });
-                return;
-            }
-
-            const nuevaContrasenaEncriptada = await bcrypt.hash(newPassword, 10);
-            empleado.emplContrasena = nuevaContrasenaEncriptada;
-            await empleado.save();
-
-            res.status(200).json({ message: "Contraseña actualizada correctamente" });
-        } catch (error) {
-            res.status(500).json({ message: "Error del servidor al cambiar la contraseña" });
+        const id = parseInt(req.params.id);
+        const { currentPassword, newPassword } = req.body;
+        if (isNaN(id)) {
+            res.status(400).json({ message: "ID inválido" });
+            return;
         }
-    }
-};
-
-export default EmpleadoController;
+        const empleado = await Empleado.findByPk(id);
+        if (!empleado) {
+            res.status(404).json({ message: "Empleado no encontrado" });
+            return;
+        }
+        const contrasenaValida = await bcrypt.compare(currentPassword, empleado.emplContrasena);
+        if (!contrasenaValida) {
+            res.status(401).json({ message: "La contraseña actual es incorrecta" });
+            return;
+        }
+        const nuevaContrasenaEncriptada = await bcrypt.hash(newPassword, 10);
+        empleado.emplContrasena = nuevaContrasenaEncriptada;
+        await empleado.save();
+        res.status(200).json({ message: "Contraseña actualizada correctamente" });
+        } catch (error) {
+        console.error("Error al cambiar la contraseña:", error);
+        res.status(500).json({ message: "Error del servidor al cambiar la contraseña", detalles: (error as any).message });
+        }
+    };
+}
