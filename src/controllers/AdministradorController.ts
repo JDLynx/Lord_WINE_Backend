@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import Administrador from "../models/administrador";
+import { transporter, mailOptions } from "../config/mailer";
 
 export class AdministradorControllers {
   static getAdministradorAll = async (req: Request, res: Response): Promise<void> => {
@@ -34,7 +35,7 @@ export class AdministradorControllers {
 
   static crearAdministrador = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { adminCorreoElectronico, adminContrasena } = req.body;
+      const { adminCorreoElectronico, adminContrasena, adminNombre, adminApellido } = req.body;
       if (!adminCorreoElectronico || !adminContrasena) {
         res.status(400).json({ error: "Correo electrónico y contraseña son obligatorios" });
         return;
@@ -44,6 +45,37 @@ export class AdministradorControllers {
         ...req.body,
         adminContrasena: hashedPassword
       });
+
+      try {
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #921913; text-align: center;">¡Nueva cuenta de administrador creada!</h2>
+            <p>Hola **${adminNombre || ''} ${adminApellido || ''}**,</p>
+            <p>Se ha creado una cuenta de administrador para ti en Lord Wine.</p>
+            <p>Puedes acceder al panel de administración con las siguientes credenciales:</p>
+            <ul>
+              <li><strong>Correo electrónico:</strong> ${adminCorreoElectronico}</li>
+            </ul>
+            <p>Utiliza la contraseña que se te proporcionó para iniciar sesión por primera vez.</p>
+            <p>Si tienes alguna duda o necesitas ayuda, no dudes en contactar al equipo técnico.</p>
+            <p>Atentamente,<br>El equipo de Lord Wine</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin-top: 20px;">
+            <p style="text-align: center; font-size: 12px; color: #999;">Este es un correo automático. Por favor, no respondas a esta dirección.</p>
+          </div>
+        `;
+
+        await transporter.sendMail(
+          mailOptions(
+            adminCorreoElectronico,
+            "Tu cuenta de administrador de Lord Wine",
+            htmlContent
+          )
+        );
+        console.log(`📩 Correo de bienvenida para administrador enviado a ${adminCorreoElectronico}`);
+      } catch (emailError) {
+        console.error("❌ Error al enviar correo de bienvenida para administrador:", emailError);
+      }
+
       res.status(201).json({ mensaje: "Administrador creado correctamente", administrador });
     } catch (error: any) {
       console.error("Error al crear administrador:", error);
