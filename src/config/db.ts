@@ -1,5 +1,6 @@
 import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -10,7 +11,7 @@ export const db = new Sequelize({
     host: process.env.DB_HOST as string,
     port: parseInt(process.env.DB_PORT as string, 10),
     dialect: 'mysql',
-    models: [__dirname + '/../../dist/models/**/*.js'],
+    models: [path.join(__dirname, '..', 'models', '**', '*.ts')],
     logging: false,
     pool: {
         max: 10,
