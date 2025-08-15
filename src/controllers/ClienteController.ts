@@ -40,7 +40,7 @@ export class ClienteControllers {
 
     static crearCliente = async (req: Request, res: Response): Promise<void> => {
         try {
-        const { clCorreoElectronico, clContrasena } = req.body;
+        const { clCorreoElectronico, clContrasena, clNombre, clApellido } = req.body;
 
         if (!clCorreoElectronico || !clContrasena) {
             res.status(400).json({ error: "Correo electrónico y contraseña son obligatorios" });
@@ -55,20 +55,28 @@ export class ClienteControllers {
 
         try {
             const htmlContent = `
-            <h2>Bienvenido a Lord Wine 🍷</h2>
-            <p>Gracias por registrarte. Estos son tus datos:</p>
-            <ul>
-                ${Object.entries(req.body)
-                .map(([key, value]) => `<li><b>${key}:</b> ${value}</li>`)
-                .join("")}
-            </ul>
-            <p>Fecha de registro: ${new Date().toLocaleString()}</p>
+                <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                    <h2 style="color: #6a1b9a; text-align: center;">¡Bienvenido/a a Lord Wine! 🍷</h2>
+                    <p>Hola **${clNombre || ''} ${clApellido || ''}**,</p>
+                    <p>¡Gracias por registrarte en nuestra tienda! Estamos muy felices de tenerte con nosotros y esperamos que disfrutes explorando nuestra exquisita selección de productos.</p>
+                    <p>Tu cuenta ha sido creada exitosamente con el correo electrónico: <strong>${clCorreoElectronico}</strong>.</p>
+                    <p>Ahora puedes iniciar sesión para descubrir las mejores ofertas y los productos más exclusivos.</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="URL_DE_TU_SITIO_WEB" style="background-color: #6a1b9a; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                            Descubre nuestros productos
+                        </a>
+                    </div>
+                    <p>Si tienes alguna pregunta, no dudes en contactarnos. ¡Esperamos verte pronto!</p>
+                    <p>Atentamente,<br>El equipo de Lord Wine</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin-top: 20px;">
+                    <p style="text-align: center; font-size: 12px; color: #999;">Este es un correo automático, por favor no respondas a esta dirección.</p>
+                </div>
             `;
 
             await transporter.sendMail(
             mailOptions(
                 clCorreoElectronico,
-                "Bienvenido a Lord Wine 🍷",
+                "Bienvenido a Lord Wine 🍷 - Tu registro ha sido exitoso",
                 htmlContent
             )
             );
