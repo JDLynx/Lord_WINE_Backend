@@ -5,6 +5,7 @@ import Empleado from "../models/empleado";
 import DetallePedido from "../models/detalle_pedido";
 import Producto from "../models/producto";
 import { ValidationError } from 'sequelize';
+import { db as sequelize } from "../config/db";
 
 export class PedidoControllers {
     static getPedidosAll = async (_req: Request, res: Response): Promise<void> => {
@@ -97,6 +98,89 @@ export class PedidoControllers {
         }
     };
 
+    static crearPedidoDesdeCarrito = async (req: Request, res: Response): Promise<void> => {
+        const t = await sequelize.transaction();
+        try {
+            const { clCodCliente, serIdServicioEmpresarial, items } = req.body;
+
+            const cliente = await Cliente.findByPk(clCodCliente, { transaction: t });
+            if (!cliente) {
+                await t.rollback();
+                res.status(404).json({ error: "Cliente no encontrado" });
+                return;
+            }
+
+            const productoIds = items.map((item: any) => item.prodIdProducto);
+            const productos = await Producto.findAll({
+                where: {
+                    prodIdProducto: productoIds
+                },
+                transaction: t
+            });
+
+            if (productos.length !== productoIds.length) {
+                await t.rollback();
+                res.status(400).json({ error: "Uno o más productos no existen" });
+                return;
+            }
+
+            let totalPedido = 0;
+            const detalles = items.map((item: any) => {
+                const producto = productos.find(p => p.getDataValue('prodIdProducto') === item.prodIdProducto);
+                if (!producto) {
+                    throw new Error("Producto no encontrado durante el cálculo del total");
+                }
+                const precioUnitario = producto.getDataValue('prodPrecio');
+                const subtotal = precioUnitario * item.cantidad;
+                totalPedido += subtotal;
+
+                return {
+                    detaCantidad: item.cantidad,
+                    detaPrecioUnitario: precioUnitario,
+                    detaSubtotal: subtotal,
+                    prodIdProducto: item.prodIdProducto
+                };
+            });
+
+            const nuevoPedidoData = {
+                pedFecha: new Date().toISOString().split('T')[0],
+                pedTotal: Math.round(totalPedido),
+                pedEstado: 'Pendiente',
+                clCodCliente,
+                serIdServicioEmpresarial,
+                emplCodEmpleado: null 
+            };
+
+            // Casteamos el objeto a 'any' para evitar el error de tipado de TypeScript
+            const nuevoPedido = await Pedido.create(nuevoPedidoData as any, { transaction: t });
+
+            const detallesConPedidoId = detalles.map((detalle: any) => ({
+                ...detalle,
+                pedIdPedido: nuevoPedido.pedIdPedido
+            }));
+
+            await DetallePedido.bulkCreate(detallesConPedidoId, { transaction: t });
+
+            await t.commit();
+            res.status(201).json({ mensaje: "Pedido desde carrito creado correctamente", pedido: nuevoPedido, detalles: detallesConPedidoId });
+        } catch (error: any) {
+            await t.rollback();
+            console.error("Error al crear pedido desde el carrito:", error);
+            if (error instanceof ValidationError) {
+                res.status(400).json({
+                    error: "Error de validación al crear el pedido",
+                    details: error.errors.map(e => ({
+                        path: e.path,
+                        message: e.message,
+                        value: e.value
+                    }))
+                });
+            } else {
+                res.status(500).json({ error: "Error del servidor al procesar el pedido" });
+            }
+        }
+    };
+
     static actualizarPedidoId = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log("¡Entrando a la función actualizarPedidoId!");
@@ -151,7 +235,6 @@ export class PedidoControllers {
             console.error("Error al actualizar pedido:", error);
 
             if (error instanceof ValidationError) {
-                console.error("Errores de validación de Sequelize:", error.errors.map(e => e.message));
                 res.status(400).json({
                     error: "Error de validación al actualizar el pedido",
                     details: error.errors.map(e => ({
@@ -161,9 +244,6 @@ export class PedidoControllers {
                     }))
                 });
             } else {
-                console.error("Error no capturado por ValidationError:", error);
-                console.error("Mensaje de error:", error.message);
-                console.error("Stack de error:", error.stack);
                 res.status(500).json({ error: "Error del servidor al actualizar el pedido" });
             }
         }
