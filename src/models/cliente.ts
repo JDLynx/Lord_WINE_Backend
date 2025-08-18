@@ -1,3 +1,5 @@
+// src/models/cliente.ts (Actualizado)
+
 import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, CreatedAt, UpdatedAt, Unique, HasMany } from 'sequelize-typescript';
 import Pedido from './pedido';
 import TieneClienteCarritoDeCompras from './tiene_cliente_carrito_de_compras';
@@ -27,6 +29,13 @@ export class Cliente extends Model<Cliente> {
 
     @Column({ type: DataType.STRING(255), allowNull: false })
     declare clContrasena: string;
+
+    // Campos para la recuperación de contraseña
+    @Column({ type: DataType.STRING, allowNull: true })
+    declare clResetToken?: string | null;
+
+    @Column({ type: DataType.DATE, allowNull: true })
+    declare clResetTokenExpiration?: Date | null;
 
     @CreatedAt
     @Column({ field: 'createdAt' })

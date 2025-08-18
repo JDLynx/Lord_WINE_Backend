@@ -3,6 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+const modelsPath = isProduction 
+  ? __dirname + '/../../dist/models/**/*.js' 
+  : __dirname + '/../models/**/*.ts';
+
 export const db = new Sequelize({
     database: process.env.DB_DATABASE as string,
     username: process.env.DB_USER as string,
@@ -10,7 +15,7 @@ export const db = new Sequelize({
     host: process.env.DB_HOST as string,
     port: parseInt(process.env.DB_PORT as string, 10),
     dialect: 'mysql',
-    models: [__dirname + '/../../dist/models/**/*.js'],
+    models: [modelsPath],
     logging: false,
     pool: {
         max: 10,
