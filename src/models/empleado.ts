@@ -28,6 +28,13 @@ export class Empleado extends Model<Empleado> {
   @Column({ type: DataType.STRING(255), allowNull: false })
   declare emplContrasena: string;
 
+  // Nuevos campos para la recuperación de contraseña
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare emplResetToken: string | null;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare emplResetTokenExpiration: Date | null;
+
   @ForeignKey(() => Administrador)
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare adminCodAdministrador: number;
