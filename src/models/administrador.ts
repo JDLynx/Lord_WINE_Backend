@@ -30,6 +30,13 @@ export class Administrador extends Model<Administrador> {
   @Column({ type: DataType.STRING(255), allowNull: false })
   declare adminContrasena: string;
 
+  // Nuevos campos para la recuperación de contraseña
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare adminResetToken: string | null;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare adminResetTokenExpiration: Date | null;
+
   @CreatedAt
   @Column({ field: 'createdAt' })
   declare createdAt: Date;

@@ -88,9 +88,40 @@ export const AuthController = {
     }
 
     try {
-      const cliente = await Cliente.findOne({ where: { clCorreoElectronico: correo } });
+      let usuario: Administrador | Empleado | Cliente | null = null;
+      let campoCorreo: string = "";
+      let campoToken: string = "";
+      let campoExpiracion: string = "";
 
-      if (!cliente) {
+      // Buscar en el modelo de Administrador
+      usuario = await Administrador.findOne({ where: { adminCorreoElectronico: correo } });
+      if (usuario) {
+        campoCorreo = "adminCorreoElectronico";
+        campoToken = "adminResetToken";
+        campoExpiracion = "adminResetTokenExpiration";
+      }
+
+      // Si no se encontró en Administrador, buscar en Empleado
+      if (!usuario) {
+        usuario = await Empleado.findOne({ where: { emplCorreoElectronico: correo } });
+        if (usuario) {
+          campoCorreo = "emplCorreoElectronico";
+          campoToken = "emplResetToken";
+          campoExpiracion = "emplResetTokenExpiration";
+        }
+      }
+
+      // Si no se encontró en Empleado, buscar en Cliente
+      if (!usuario) {
+        usuario = await Cliente.findOne({ where: { clCorreoElectronico: correo } });
+        if (usuario) {
+          campoCorreo = "clCorreoElectronico";
+          campoToken = "clResetToken";
+          campoExpiracion = "clResetTokenExpiration";
+        }
+      }
+
+      if (!usuario) {
         // Es importante no revelar si el correo existe o no para evitar la enumeración de usuarios
         res.status(200).json({ mensaje: "Si el correo existe, se le ha enviado un código de verificación." });
         return;
@@ -102,17 +133,17 @@ export const AuthController = {
         charset: 'numeric'
       });
 
-      // Establecer la fecha de expiración del token (ej. 1 hora a partir de ahora)
+      // Establecer la fecha de expiración del token
       const expiration = new Date();
       expiration.setHours(expiration.getHours() + 1);
 
-      // Guardar el token y su fecha de expiración en el cliente
-      cliente.clResetToken = token;
-      cliente.clResetTokenExpiration = expiration;
-      await cliente.save();
+      // Guardar el token y su fecha de expiración en el usuario encontrado
+      (usuario as any)[campoToken] = token;
+      (usuario as any)[campoExpiracion] = expiration;
+      await usuario.save();
 
-      // Enviar el correo electrónico al cliente
-      await sendPasswordResetEmail(cliente.clCorreoElectronico, token);
+      // Enviar el correo electrónico
+      await sendPasswordResetEmail((usuario as any)[campoCorreo], token);
 
       res.status(200).json({ mensaje: "Si el correo existe, se le ha enviado un código de verificación." });
     } catch (error) {
@@ -130,17 +161,48 @@ export const AuthController = {
     }
 
     try {
-      const cliente = await Cliente.findOne({
+      let usuario: Administrador | Empleado | Cliente | null = null;
+      let campoContrasena: string = "";
+
+      // Buscar el usuario en las tres tablas
+      usuario = await Administrador.findOne({
         where: {
-          clCorreoElectronico: correo,
-          clResetToken: token,
-          clResetTokenExpiration: {
-            [Op.gt]: new Date() // El token debe ser mayor a la fecha actual (no expirado)
-          }
+          adminCorreoElectronico: correo,
+          adminResetToken: token,
+          adminResetTokenExpiration: { [Op.gt]: new Date() }
         }
       });
+      if (usuario) {
+        campoContrasena = "adminContrasena";
+      }
 
-      if (!cliente) {
+      if (!usuario) {
+        usuario = await Empleado.findOne({
+          where: {
+            emplCorreoElectronico: correo,
+            emplResetToken: token,
+            emplResetTokenExpiration: { [Op.gt]: new Date() }
+          }
+        });
+        if (usuario) {
+          campoContrasena = "emplContrasena";
+        }
+      }
+
+      if (!usuario) {
+        usuario = await Cliente.findOne({
+          where: {
+            clCorreoElectronico: correo,
+            clResetToken: token,
+            clResetTokenExpiration: { [Op.gt]: new Date() }
+          }
+        });
+        if (usuario) {
+          campoContrasena = "clContrasena";
+        }
+      }
+
+      if (!usuario) {
         res.status(400).json({ error: "Token inválido o expirado." });
         return;
       }
@@ -149,11 +211,15 @@ export const AuthController = {
       const salt = await bcrypt.genSalt(10);
       const hashedContrasena = await bcrypt.hash(nuevaContrasena, salt);
 
-      // Actualizar la contraseña del cliente y limpiar los campos de recuperación
-      cliente.clContrasena = hashedContrasena;
-      cliente.clResetToken = null;
-      cliente.clResetTokenExpiration = null;
-      await cliente.save();
+      // Actualizar la contraseña y limpiar los campos de recuperación
+      (usuario as any)[campoContrasena] = hashedContrasena;
+      (usuario as any).clResetToken = null;
+      (usuario as any).clResetTokenExpiration = null;
+      (usuario as any).emplResetToken = null;
+      (usuario as any).emplResetTokenExpiration = null;
+      (usuario as any).adminResetToken = null;
+      (usuario as any).adminResetTokenExpiration = null;
+      await usuario.save();
 
       res.status(200).json({ mensaje: "Contraseña actualizada exitosamente." });
     } catch (error) {
