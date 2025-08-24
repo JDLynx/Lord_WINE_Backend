@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import colors from 'colors';
 import Producto from '../models/producto';
 import Categoria from '../models/categoria';
-import TiendaFisica from '../models/tienda_fisica'; // Asegúrate de que esta línea esté presente
+import TiendaFisica from '../models/tienda_fisica';
 
 const router = Router();
 
