@@ -5,7 +5,6 @@ const idParamValidator = param('id')
     .withMessage('El ID debe ser un número entero positivo');
 
 export const getEmpleadoByIdValidation = [idParamValidator];
-
 export const deleteEmpleadoValidation = [idParamValidator];
 
 export const createEmpleadoValidation = [
@@ -41,7 +40,11 @@ export const createEmpleadoValidation = [
 
     body('adminCodAdministrador')
         .notEmpty().withMessage('El ID del administrador es obligatorio')
-        .isInt({ gt: 0 }).withMessage('El ID del administrador debe ser un número entero positivo')
+        .isInt({ gt: 0 }).withMessage('El ID del administrador debe ser un número entero positivo'),
+
+    body('tiendIdTiendaFisica')
+        .notEmpty().withMessage('El ID de la tienda es obligatorio')
+        .isInt({ gt: 0 }).withMessage('El ID de la tienda debe ser un número entero positivo')
 ];
 
 export const updateEmpleadoValidation = [
@@ -79,5 +82,9 @@ export const updateEmpleadoValidation = [
 
     body('adminCodAdministrador')
         .notEmpty().withMessage('El ID del administrador es obligatorio')
-        .isInt({ gt: 0 }).withMessage('El ID del administrador debe ser un número entero positivo')
+        .isInt({ gt: 0 }).withMessage('El ID del administrador debe ser un número entero positivo'),
+
+    body('tiendIdTiendaFisica')
+        .notEmpty().withMessage('El ID de la tienda es obligatorio')
+        .isInt({ gt: 0 }).withMessage('El ID de la tienda debe ser un número entero positivo')
 ];
