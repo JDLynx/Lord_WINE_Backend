@@ -51,27 +51,32 @@ export const updateEmpleadoValidation = [
     idParamValidator,
 
     body('emplIdEmpleado')
+        .optional()
         .trim()
         .notEmpty().withMessage('El ID del empleado es obligatorio')
         .isString().withMessage('El ID debe ser una cadena de texto'),
 
     body('emplNombre')
+        .optional()
         .trim()
         .notEmpty().withMessage('El nombre es obligatorio')
         .isLength({ max: 50 }).withMessage('El nombre no puede superar los 50 caracteres'),
 
     body('emplDireccion')
+        .optional()
         .trim()
         .notEmpty().withMessage('La dirección es obligatoria')
         .isLength({ max: 50 }).withMessage('La dirección no puede superar los 50 caracteres'),
 
     body('emplTelefono')
+        .optional()
         .trim()
         .notEmpty().withMessage('El teléfono es obligatorio')
         .isLength({ max: 50 }).withMessage('El teléfono no puede superar los 50 caracteres')
         .matches(/^\+?\d{7,15}$/).withMessage('El teléfono debe contener entre 7 y 15 dígitos'),
 
     body('emplCorreoElectronico')
+        .optional()
         .trim()
         .notEmpty().withMessage('El correo electrónico es obligatorio')
         .isEmail().withMessage('Formato de correo inválido'),
@@ -81,10 +86,11 @@ export const updateEmpleadoValidation = [
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
 
     body('adminCodAdministrador')
+        .optional()
         .notEmpty().withMessage('El ID del administrador es obligatorio')
         .isInt({ gt: 0 }).withMessage('El ID del administrador debe ser un número entero positivo'),
 
     body('tiendIdTiendaFisica')
-        .notEmpty().withMessage('El ID de la tienda es obligatorio')
+        .optional({ nullable: true })
         .isInt({ gt: 0 }).withMessage('El ID de la tienda debe ser un número entero positivo')
 ];
