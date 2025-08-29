@@ -2,9 +2,15 @@ import { Router } from 'express';
 import { SessionsClient } from '@google-cloud/dialogflow';
 import { v4 as uuid } from 'uuid';
 import colors from 'colors';
+import { Op } from 'sequelize';
+
+// Importa los modelos corregidos
 import Producto from '../models/producto';
 import Categoria from '../models/categoria';
 import TiendaFisica from '../models/tienda_fisica';
+import TieneInventarioTiendaProducto from '../models/tiene_inventario_tienda_producto';
+import { InventarioTienda } from '../models/inventario_tienda';
+
 
 const router = Router();
 
@@ -273,6 +279,68 @@ router.post('/dialogflow-query', async (req, res) => {
                 }
             } else {
                 finalResponseText = 'No entendí de qué tienda quieres saber el teléfono. Por favor, sé más específico.';
+            }
+        }
+
+        // Lógica para el intent de disponibilidad de producto
+        else if (intentName === 'ConsultarDisponibilidadProducto') {
+            const productName = result.parameters?.fields?.Producto?.stringValue;
+            if (productName) {
+                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la disponibilidad de: "${productName}"`));
+                try {
+                    // Consulta con include anidado para acceder a los datos de la tienda
+                    const producto = await Producto.findOne({
+                        where: {
+                            prodNombre: productName
+                        },
+                        include: [{
+                            model: TieneInventarioTiendaProducto,
+                            include: [{
+                                model: InventarioTienda,
+                                include: [TiendaFisica]
+                            }]
+                        }]
+                    });
+
+                    if (!producto) {
+                        finalResponseText = `Lo siento, no pude encontrar el producto "${productName}". ¿Hay algo más en lo que pueda ayudarte?`;
+                    } else {
+                        const inventarios = producto.inventarioPorTienda;
+                        
+                        if (inventarios.length === 0) {
+                            finalResponseText = `Actualmente no tenemos información de stock para el producto "${producto.prodNombre}".`;
+                        } else {
+                            let respuesta = `La disponibilidad de "${producto.prodNombre}" es la siguiente:\n`;
+                            let totalDisponible = 0;
+
+                            for (const inv of inventarios) {
+                                const cantidad = inv.invTienProdCantidad;
+
+                                // Accede a la asociación BelongsTo
+                                const inventarioTiendaInstance = inv.inventarioTienda;
+
+                                // Accede a la asociación BelongsToMany
+                                const tiendasFisicas = inventarioTiendaInstance.tiendasFisicas;
+
+                                // Obtiene el nombre de la tienda del array de tiendas físicas
+                                const tienda = tiendasFisicas?.[0]?.tiendNombre || 'Tienda desconocida';
+
+                                totalDisponible += cantidad;
+                                if (cantidad > 0) {
+                                    respuesta += `En la tienda de ${tienda} hay ${cantidad} unidad(es) disponible(s).\n`;
+                                } else {
+                                    respuesta += `El producto está agotado en la tienda de ${tienda}.\n`;
+                                }
+                            }
+                            finalResponseText = respuesta;
+                        }
+                    }
+                } catch (dbError) {
+                    console.error(colors.red.bold('[Base de datos ERROR]:'), dbError);
+                    finalResponseText = 'Hubo un error al consultar la base de datos.';
+                }
+            } else {
+                finalResponseText = 'No entendí el producto que buscas. Por favor, sé más específico.';
             }
         }
         
