@@ -12,10 +12,8 @@ import { authenticateToken, isClient } from "../middleware/AuthMiddleware";
 
 const router = Router();
 
-// Aplica el middleware de autenticación a todas las rutas de este router
 router.use(authenticateToken);
 
-// Rutas GET protegidas
 router.get("/", PedidoControllers.getPedidosAll);
 
 router.get("/:id",
@@ -24,7 +22,6 @@ router.get("/:id",
     PedidoControllers.getPedidoById
 );
 
-// Rutas POST para crear pedidos (protegidas y solo para clientes)
 router.post("/",
     isClient,
     createPedidoValidation,
@@ -39,7 +36,6 @@ router.post("/crear-desde-carrito",
     PedidoControllers.crearPedidoDesdeCarrito
 );
 
-// Rutas PUT y DELETE (protegidas)
 router.put("/:id",
     updatePedidoValidation,
     handleInputErrors,
