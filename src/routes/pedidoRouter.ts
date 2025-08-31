@@ -1,18 +1,9 @@
 import { Router } from "express";
 import { PedidoControllers } from "../controllers/PedidoController";
 import { handleInputErrors } from "../middleware/validation";
-import { 
-    getPedidoByIdValidation, 
-    createPedidoValidation, 
-    updatePedidoValidation, 
-    deletePedidoValidation, 
-    createPedidoFromCartValidation 
-} from "../middleware/pedido";
-import { authenticateToken, isClient } from "../middleware/AuthMiddleware";
+import { getPedidoByIdValidation, createPedidoValidation, updatePedidoValidation, deletePedidoValidation, createPedidoFromCartValidation } from "../middleware/pedido";
 
 const router = Router();
-
-router.use(authenticateToken);
 
 router.get("/", PedidoControllers.getPedidosAll);
 
@@ -23,14 +14,12 @@ router.get("/:id",
 );
 
 router.post("/",
-    isClient,
     createPedidoValidation,
     handleInputErrors,
     PedidoControllers.crearPedido
 );
 
 router.post("/crear-desde-carrito",
-    isClient,
     createPedidoFromCartValidation,
     handleInputErrors,
     PedidoControllers.crearPedidoDesdeCarrito
