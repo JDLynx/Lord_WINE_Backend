@@ -4,13 +4,12 @@ import { v4 as uuid } from 'uuid';
 import colors from 'colors';
 import { Op } from 'sequelize';
 
-// Importa los modelos corregidos
+// Importa tus modelos
 import Producto from '../models/producto';
 import Categoria from '../models/categoria';
 import TiendaFisica from '../models/tienda_fisica';
 import TieneInventarioTiendaProducto from '../models/tiene_inventario_tienda_producto';
 import { InventarioTienda } from '../models/inventario_tienda';
-
 
 const router = Router();
 
@@ -71,20 +70,24 @@ router.post('/dialogflow-query', async (req, res) => {
             console.log(colors.magenta(`[Dialogflow] Parámetros: ${JSON.stringify(result.parameters.fields)}`));
         }
 
-        let finalResponseText = '';
-
+        let finalResponseText = result.fulfillmentText || 'Lo siento, no pude procesar tu solicitud.';
+        let quickReplies = null;
         const intentName = result.intent?.displayName;
-        const productName = result.parameters?.fields?.producto?.stringValue || result.parameters?.fields?.Producto?.stringValue;
-        const categoryName = result.parameters?.fields?.Tipoproducto?.stringValue;
-
-        // Lógica para el intent de precio
+        const productName = result.parameters?.fields?.Producto?.stringValue || '';
+        const categoryName = result.parameters?.fields?.Tipoproducto?.stringValue || '';
+        const storeName = result.parameters?.fields?.NombreTienda?.stringValue || '';
+        
+        // Lógica de fulfillment para cada intent
+        
+        // Intent: ConsultarPrecioProducto
         if (intentName === 'ConsultarPrecioProducto') {
-            if (productName) {
-                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para el precio de: "${productName}"`));
+            const producto = result.parameters?.fields?.producto?.stringValue || productName;
+            if (producto) {
+                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para el precio de: "${producto}"`));
                 try {
-                    const product = await Producto.findOne({ where: { prodNombre: productName } });
-                    if (product) {
-                        finalResponseText = `El precio de ${product.prodNombre} es de $${product.prodPrecio.toLocaleString("es-CO")}.`;
+                    const foundProduct = await Producto.findOne({ where: { prodNombre: { [Op.like]: `%${producto}%` } } });
+                    if (foundProduct) {
+                        finalResponseText = `El precio de ${foundProduct.prodNombre} es de $${foundProduct.prodPrecio.toLocaleString("es-CO")}.`;
                     } else {
                         finalResponseText = 'Lo siento, no pude encontrar información sobre ese producto.';
                     }
@@ -93,18 +96,20 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos. Por favor, inténtelo de nuevo más tarde.';
                 }
             } else {
-                finalResponseText = 'No entendí el producto que buscas. Por favor, sé más específico.';
+                finalResponseText = result.fulfillmentText || '¿De qué producto te gustaría saber el precio?';
             }
         }
         
-        // Lógica para el intent de descripción
+        // Intent: ConsultarDescripcionProducto
         else if (intentName === 'ConsultarDescripcionProducto') {
-            if (productName) {
-                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la descripción de: "${productName}"`));
+            const producto = result.parameters?.fields?.producto?.stringValue || productName;
+            if (producto) {
+                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la descripción de: "${producto}"`));
                 try {
-                    const product = await Producto.findOne({ where: { prodNombre: productName } });
-                    if (product) {
-                        finalResponseText = `Claro, aquí está la descripción de ${product.prodNombre}: "${product.prodDescripcion}".`;
+                    const foundProduct = await Producto.findOne({ where: { prodNombre: { [Op.like]: `%${producto}%` } } });
+                    if (foundProduct) {
+                        finalResponseText = `Claro, aquí está la descripción de ${foundProduct.prodNombre}: "${foundProduct.prodDescripcion}".`;
+                        quickReplies = null; // Eliminado
                     } else {
                         finalResponseText = 'Lo siento, no pude encontrar información sobre ese producto.';
                     }
@@ -113,17 +118,16 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos. Por favor, inténtelo de nuevo más tarde.';
                 }
             } else {
-                finalResponseText = 'No entendí el producto que buscas. Por favor, sé más específico.';
+                finalResponseText = result.fulfillmentText || 'Por favor, dime el nombre del producto que buscas.';
             }
         }
         
-        // Lógica para el intent de productos por categoría
         else if (intentName === 'ConsultarProductosPorCategoria') {
             if (categoryName) {
                 console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la categoría: "${categoryName}"`));
                 try {
                     const foundCategory = await Categoria.findOne({
-                        where: { catNombre: categoryName },
+                        where: { catNombre: { [Op.like]: `%${categoryName}%` } },
                         include: [Producto]
                     });
                     if (foundCategory && foundCategory.productos.length > 0) {
@@ -139,17 +143,17 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos.';
                 }
             } else {
-                finalResponseText = 'No entendí la categoría que buscas.';
+                finalResponseText = result.fulfillmentText || '¿De qué categoría te gustaría conocer los productos?';
             }
         }
         
-        // Lógica para el intent de conteo
+        // Intent: ConsultarConteoProductosPorCategoria
         else if (intentName === 'ConsultarConteoProductosPorCategoria') {
             if (categoryName) {
                 console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para el conteo en la categoría: "${categoryName}"`));
                 try {
                     const foundCategory = await Categoria.findOne({
-                        where: { catNombre: categoryName },
+                        where: { catNombre: { [Op.like]: `%${categoryName}%` } },
                         include: [Producto]
                     });
                     if (foundCategory) {
@@ -167,36 +171,37 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos.';
                 }
             } else {
-                finalResponseText = 'No entendí la categoría que buscas.';
+                finalResponseText = result.fulfillmentText || '¿De qué categoría te gustaría saber el número de productos?';
             }
         }
         
-        // Lógica para el intent ConsultarCategoriaDeProducto
+        // Intent: ConsultarCategoriaDeProducto
         else if (intentName === 'ConsultarCategoriaDeProducto') {
-            if (productName) {
-                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la categoría de: "${productName}"`));
+            const producto = result.parameters?.fields?.producto?.stringValue || productName;
+            if (producto) {
+                console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la categoría de: "${producto}"`));
                 try {
-                    const product = await Producto.findOne({
-                        where: { prodNombre: productName },
+                    const foundProduct = await Producto.findOne({
+                        where: { prodNombre: { [Op.like]: `%${producto}%` } },
                         include: [Categoria]
                     });
-                    if (product && product.categoria) {
-                        finalResponseText = `El producto "${product.prodNombre}" pertenece a la categoría de "${product.categoria.catNombre}".`;
-                    } else if (product) {
-                        finalResponseText = `Lo siento, no se pudo encontrar la categoría para el producto "${productName}".`;
+                    if (foundProduct && foundProduct.categoria) {
+                        finalResponseText = `El producto "${foundProduct.prodNombre}" pertenece a la categoría de "${foundProduct.categoria.catNombre}".`;
+                    } else if (foundProduct) {
+                        finalResponseText = `Lo siento, no se pudo encontrar la categoría para el producto "${producto}".`;
                     } else {
-                        finalResponseText = `Lo siento, no pude encontrar el producto "${productName}".`;
+                        finalResponseText = `Lo siento, no pude encontrar el producto "${producto}".`;
                     }
                 } catch (dbError) {
                     console.error(colors.red.bold('[Base de datos ERROR]:'), dbError);
                     finalResponseText = 'Hubo un error al consultar la base de datos.';
                 }
             } else {
-                finalResponseText = 'No entendí el producto del que quieres saber la categoría.';
+                finalResponseText = result.fulfillmentText || '¿De qué producto quieres saber la categoría?';
             }
         }
         
-        // Lógica para el intent ConsultarCategoriasDisponibles
+        // Intent: ConsultarCategoriasDisponibles
         else if (intentName === 'ConsultarCategoriasDisponibles') {
             console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para listar todas las categorías.`));
             try {
@@ -214,7 +219,7 @@ router.post('/dialogflow-query', async (req, res) => {
             }
         }
         
-        // Lógica para el intent ConsultarTiendasDisponibles
+        // Intent: ConsultarTiendasDisponibles
         else if (intentName === 'ConsultarTiendasDisponibles') {
             console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para listar todas las tiendas.`));
             try {
@@ -225,6 +230,7 @@ router.post('/dialogflow-query', async (req, res) => {
                         responseList += `\n- ${tienda.tiendNombre} en ${tienda.tiendDireccion}. Teléfono: ${tienda.tiendTelefono}.`;
                     });
                     finalResponseText = responseList;
+                    quickReplies = ["Consultar ubicación", "Consultar teléfono"];
                 } else {
                     finalResponseText = 'Lo siento, no hay tiendas físicas disponibles en este momento.';
                 }
@@ -233,15 +239,14 @@ router.post('/dialogflow-query', async (req, res) => {
                 finalResponseText = 'Hubo un error al consultar la base de datos.';
             }
         }
-
-        // Lógica para el intent ConsultarUbicacionTienda
+        
+        // Intent: ConsultarUbicacionTienda
         else if (intentName === 'ConsultarUbicacionTienda') {
-            const storeName = result.parameters?.fields?.NombreTienda?.stringValue;
             if (storeName) {
                 console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la ubicación de: "${storeName}"`));
                 try {
                     const store = await TiendaFisica.findOne({
-                        where: { tiendNombre: storeName }
+                        where: { tiendNombre: { [Op.like]: `%${storeName}%` } }
                     });
                     if (store) {
                         finalResponseText = `La tienda "${store.tiendNombre}" se encuentra en la dirección: ${store.tiendDireccion}.`;
@@ -253,21 +258,18 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos.';
                 }
             } else {
-                finalResponseText = 'No entendí de qué tienda quieres saber la ubicación. Por favor, sé más específico.';
+                finalResponseText = result.fulfillmentText || '¿De qué tienda quieres saber la ubicación?';
             }
         }
-
-        // Lógica para el intent ConsultarTelefonoTienda
+        
+        // Intent: ConsultarTelefonoTienda
         else if (intentName === 'ConsultarTelefonoTienda') {
-            const storeName = result.parameters?.fields?.NombreTienda?.stringValue;
-
             if (storeName) {
                 console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para el teléfono de: "${storeName}"`));
                 try {
                     const store = await TiendaFisica.findOne({
-                        where: { tiendNombre: storeName }
+                        where: { tiendNombre: { [Op.like]: `%${storeName}%` } }
                     });
-
                     if (store) {
                         finalResponseText = `El número de teléfono de la tienda "${store.tiendNombre}" es: ${store.tiendTelefono}.`;
                     } else {
@@ -278,21 +280,17 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos. Por favor, inténtelo de nuevo más tarde.';
                 }
             } else {
-                finalResponseText = 'No entendí de qué tienda quieres saber el teléfono. Por favor, sé más específico.';
+                finalResponseText = result.fulfillmentText || '¿De qué tienda quieres saber el teléfono?';
             }
         }
-
-        // Lógica para el intent de disponibilidad de producto
+        
+        // Intent: ConsultarDisponibilidadProducto
         else if (intentName === 'ConsultarDisponibilidadProducto') {
-            const productName = result.parameters?.fields?.Producto?.stringValue;
             if (productName) {
                 console.log(colors.yellow(`[Fulfillment] Consultado la base de datos para la disponibilidad de: "${productName}"`));
                 try {
-                    // Consulta con include anidado para acceder a los datos de la tienda
                     const producto = await Producto.findOne({
-                        where: {
-                            prodNombre: productName
-                        },
+                        where: { prodNombre: { [Op.like]: `%${productName}%` } },
                         include: [{
                             model: TieneInventarioTiendaProducto,
                             include: [{
@@ -301,38 +299,33 @@ router.post('/dialogflow-query', async (req, res) => {
                             }]
                         }]
                     });
-
+        
                     if (!producto) {
-                        finalResponseText = `Lo siento, no pude encontrar el producto "${productName}". ¿Hay algo más en lo que pueda ayudarte?`;
+                        finalResponseText = `Lo siento, no pude encontrar el producto "${productName}". ¿Podrías intentar con otra cosa?`;
                     } else {
                         const inventarios = producto.inventarioPorTienda;
-                        
+        
                         if (inventarios.length === 0) {
                             finalResponseText = `Actualmente no tenemos información de stock para el producto "${producto.prodNombre}".`;
                         } else {
                             let respuesta = `La disponibilidad de "${producto.prodNombre}" es la siguiente:\n`;
-                            let totalDisponible = 0;
-
+                            let tiendasConProducto: string[] = [];
+        
                             for (const inv of inventarios) {
                                 const cantidad = inv.invTienProdCantidad;
-
-                                // Accede a la asociación BelongsTo
                                 const inventarioTiendaInstance = inv.inventarioTienda;
-
-                                // Accede a la asociación BelongsToMany
                                 const tiendasFisicas = inventarioTiendaInstance.tiendasFisicas;
-
-                                // Obtiene el nombre de la tienda del array de tiendas físicas
                                 const tienda = tiendasFisicas?.[0]?.tiendNombre || 'Tienda desconocida';
-
-                                totalDisponible += cantidad;
+        
                                 if (cantidad > 0) {
                                     respuesta += `En la tienda de ${tienda} hay ${cantidad} unidad(es) disponible(s).\n`;
+                                    tiendasConProducto.push(tienda);
                                 } else {
                                     respuesta += `El producto está agotado en la tienda de ${tienda}.\n`;
                                 }
                             }
                             finalResponseText = respuesta;
+                            quickReplies = null; // Eliminado
                         }
                     }
                 } catch (dbError) {
@@ -340,18 +333,19 @@ router.post('/dialogflow-query', async (req, res) => {
                     finalResponseText = 'Hubo un error al consultar la base de datos.';
                 }
             } else {
-                finalResponseText = 'No entendí el producto que buscas. Por favor, sé más específico.';
+                finalResponseText = result.fulfillmentText || '¿De qué producto quieres saber la disponibilidad?';
             }
         }
         
-        else {
-            finalResponseText = result.fulfillmentText || 'Lo siento, no pude procesar tu solicitud.';
+        if (!finalResponseText) {
+            finalResponseText = result.fulfillmentText || 'Lo siento, no pude procesar tu solicitud. ¿Podrías reformular tu pregunta?';
         }
 
         res.json({
             reply: finalResponseText,
             intentName: intentName,
             parameters: result.parameters?.fields,
+            quickReplies: quickReplies,
         });
 
     } catch (error) {
